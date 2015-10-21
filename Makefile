@@ -15,6 +15,7 @@
 #     BUILD_REQUIRES => { Test::More=>q[0] }
 #     CONFIGURE_REQUIRES => { ExtUtils::MakeMaker=>q[0] }
 #     LICENSE => q[artistic_2]
+#     META_MERGE => { meta-spec=>{ version=>q[2] }, no_index=>{ directory=>[q[lib/Perlito5X], q[lib/Perlito5], q[src5]], package=>[q[name]] }, resources=>{ repository=>{ type=>q[git], url=>q[https://github.com/fglock/Perlito.git], web=>q[https://github.com/fglock/Perlito] } } }
 #     MIN_PERL_VERSION => q[5.006]
 #     NAME => q[Perlito5]
 #     PL_FILES => {  }
@@ -61,11 +62,11 @@ DIRFILESEP = /
 DFSEP = $(DIRFILESEP)
 NAME = Perlito5
 NAME_SYM = Perlito5
-VERSION = 9.002
+VERSION = 9.003
 VERSION_MACRO = VERSION
-VERSION_SYM = 9_002
+VERSION_SYM = 9_003
 DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-XS_VERSION = 9.002
+XS_VERSION = 9.003
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
 INST_ARCHLIB = blib/arch
@@ -472,7 +473,7 @@ RCS_LABEL = rcs -Nv$(VERSION_SYM): -q
 DIST_CP = best
 DIST_DEFAULT = tardist
 DISTNAME = Perlito5
-DISTVNAME = Perlito5-9.002
+DISTVNAME = Perlito5-9.003
 
 
 # --- MakeMaker macro section:
@@ -725,7 +726,7 @@ realclean_subdirs :
 # Delete temporary files (via clean) and also delete dist files
 realclean purge ::  clean realclean_subdirs
 	- $(RM_F) \
-	  $(MAKEFILE_OLD) $(FIRST_MAKEFILE) 
+	  $(FIRST_MAKEFILE) $(MAKEFILE_OLD) 
 	- $(RM_RF) \
 	  $(DISTVNAME) 
 
@@ -752,9 +753,16 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '  directory:' >> META_new.yml
 	$(NOECHO) $(ECHO) '    - t' >> META_new.yml
 	$(NOECHO) $(ECHO) '    - inc' >> META_new.yml
+	$(NOECHO) $(ECHO) '    - lib/Perlito5X' >> META_new.yml
+	$(NOECHO) $(ECHO) '    - lib/Perlito5' >> META_new.yml
+	$(NOECHO) $(ECHO) '    - src5' >> META_new.yml
+	$(NOECHO) $(ECHO) '  package:' >> META_new.yml
+	$(NOECHO) $(ECHO) '    - name' >> META_new.yml
 	$(NOECHO) $(ECHO) 'requires:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  perl: '\''5.006'\''' >> META_new.yml
-	$(NOECHO) $(ECHO) 'version: '\''9.002'\''' >> META_new.yml
+	$(NOECHO) $(ECHO) 'resources:' >> META_new.yml
+	$(NOECHO) $(ECHO) '  repository: https://github.com/fglock/Perlito.git' >> META_new.yml
+	$(NOECHO) $(ECHO) 'version: '\''9.003'\''' >> META_new.yml
 	-$(NOECHO) $(MV) META_new.yml $(DISTVNAME)/META.yml
 	$(NOECHO) $(ECHO) Generating META.json
 	$(NOECHO) $(ECHO) '{' > META_new.json
@@ -775,7 +783,13 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '   "no_index" : {' >> META_new.json
 	$(NOECHO) $(ECHO) '      "directory" : [' >> META_new.json
 	$(NOECHO) $(ECHO) '         "t",' >> META_new.json
-	$(NOECHO) $(ECHO) '         "inc"' >> META_new.json
+	$(NOECHO) $(ECHO) '         "inc",' >> META_new.json
+	$(NOECHO) $(ECHO) '         "lib/Perlito5X",' >> META_new.json
+	$(NOECHO) $(ECHO) '         "lib/Perlito5",' >> META_new.json
+	$(NOECHO) $(ECHO) '         "src5"' >> META_new.json
+	$(NOECHO) $(ECHO) '      ],' >> META_new.json
+	$(NOECHO) $(ECHO) '      "package" : [' >> META_new.json
+	$(NOECHO) $(ECHO) '         "name"' >> META_new.json
 	$(NOECHO) $(ECHO) '      ]' >> META_new.json
 	$(NOECHO) $(ECHO) '   },' >> META_new.json
 	$(NOECHO) $(ECHO) '   "prereqs" : {' >> META_new.json
@@ -796,7 +810,14 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '      }' >> META_new.json
 	$(NOECHO) $(ECHO) '   },' >> META_new.json
 	$(NOECHO) $(ECHO) '   "release_status" : "stable",' >> META_new.json
-	$(NOECHO) $(ECHO) '   "version" : "9.002"' >> META_new.json
+	$(NOECHO) $(ECHO) '   "resources" : {' >> META_new.json
+	$(NOECHO) $(ECHO) '      "repository" : {' >> META_new.json
+	$(NOECHO) $(ECHO) '         "type" : "git",' >> META_new.json
+	$(NOECHO) $(ECHO) '         "url" : "https://github.com/fglock/Perlito.git",' >> META_new.json
+	$(NOECHO) $(ECHO) '         "web" : "https://github.com/fglock/Perlito"' >> META_new.json
+	$(NOECHO) $(ECHO) '      }' >> META_new.json
+	$(NOECHO) $(ECHO) '   },' >> META_new.json
+	$(NOECHO) $(ECHO) '   "version" : "9.003"' >> META_new.json
 	$(NOECHO) $(ECHO) '}' >> META_new.json
 	-$(NOECHO) $(MV) META_new.json $(DISTVNAME)/META.json
 

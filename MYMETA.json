@@ -16,7 +16,13 @@
    "no_index" : {
       "directory" : [
          "t",
-         "inc"
+         "inc",
+         "lib/Perlito5X",
+         "lib/Perlito5",
+         "src5"
+      ],
+      "package" : [
+         "name"
       ]
    },
    "prereqs" : {
@@ -37,5 +43,12 @@
       }
    },
    "release_status" : "stable",
-   "version" : "9.002"
+   "resources" : {
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/fglock/Perlito.git",
+         "web" : "https://github.com/fglock/Perlito"
+      }
+   },
+   "version" : "9.003"
 }

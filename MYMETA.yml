@@ -17,6 +17,13 @@ no_index:
   directory:
     - t
     - inc
+    - lib/Perlito5X
+    - lib/Perlito5
+    - src5
+  package:
+    - name
 requires:
   perl: '5.006'
-version: '9.002'
+resources:
+  repository: https://github.com/fglock/Perlito.git
+version: '9.003'
