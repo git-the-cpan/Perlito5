@@ -19,7 +19,7 @@ SYNOPSIS
 COMMAND LINE
         perlito5 --help
 
-        perlito5 -Isrc5/lib -Cjs program.pl
+        perlito5 -Cjs program.pl
 
 DESCRIPTION
     This program reads Perl5 source code and generates native code.

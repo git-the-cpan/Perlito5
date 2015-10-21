@@ -1,7 +1,7 @@
 # This Makefile is for the Perlito5 extension to perl.
 #
 # It was generated automatically by MakeMaker version
-# 6.98 (Revision: 69800) from the contents of
+# 7.0401 (Revision: 70401) from the contents of
 # Makefile.PL. Don't edit this file, edit Makefile.PL instead.
 #
 #       ANY CHANGES MADE HERE WILL BE LOST!
@@ -22,35 +22,35 @@
 #     TEST_REQUIRES => {  }
 #     VERSION_FROM => q[lib/Perlito5.pm]
 #     clean => { FILES=>q[Perlito5-*] }
-#     dist => { SUFFIX=>q[gz], COMPRESS=>q[gzip -9f] }
+#     dist => { COMPRESS=>q[gzip -9f], SUFFIX=>q[gz] }
 
 # --- MakeMaker post_initialize section:
 
 
 # --- MakeMaker const_config section:
 
-# These definitions are from config.sh (via /usr/local/lib/perl5/5.20.1/x86_64-linux/Config.pm).
+# These definitions are from config.sh (via /usr/local/lib/perl5/5.22.0/darwin-2level/Config.pm).
 # They may have been overridden via Makefile.PL or on the command line.
 AR = ar
 CC = cc
-CCCDLFLAGS = -fPIC
-CCDLFLAGS = -Wl,-E
-DLEXT = so
+CCCDLFLAGS =  
+CCDLFLAGS =  
+DLEXT = bundle
 DLSRC = dl_dlopen.xs
 EXE_EXT = 
 FULL_AR = /usr/bin/ar
-LD = cc
-LDDLFLAGS = -shared -O2 -L/usr/local/lib -fstack-protector
-LDFLAGS =  -fstack-protector -L/usr/local/lib
-LIBC = libc-2.19.so
+LD = env MACOSX_DEPLOYMENT_TARGET=10.3 cc
+LDDLFLAGS =  -bundle -undefined dynamic_lookup -L/usr/local/lib -L/opt/local/lib -fstack-protector
+LDFLAGS =  -fstack-protector -L/usr/local/lib -L/opt/local/lib
+LIBC = 
 LIB_EXT = .a
 OBJ_EXT = .o
-OSNAME = linux
-OSVERS = 3.13.0-37-generic
-RANLIB = :
-SITELIBEXP = /usr/local/lib/perl5/site_perl/5.20.1
-SITEARCHEXP = /usr/local/lib/perl5/site_perl/5.20.1/x86_64-linux
-SO = so
+OSNAME = darwin
+OSVERS = 12.6.0
+RANLIB = ranlib
+SITELIBEXP = /usr/local/lib/perl5/site_perl/5.22.0
+SITEARCHEXP = /usr/local/lib/perl5/site_perl/5.22.0/darwin-2level
+SO = dylib
 VENDORARCHEXP = 
 VENDORLIBEXP = 
 
@@ -61,11 +61,11 @@ DIRFILESEP = /
 DFSEP = $(DIRFILESEP)
 NAME = Perlito5
 NAME_SYM = Perlito5
-VERSION = 9.000
+VERSION = 9.001
 VERSION_MACRO = VERSION
-VERSION_SYM = 9_000
+VERSION_SYM = 9_001
 DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-XS_VERSION = 9.000
+XS_VERSION = 9.001
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
 INST_ARCHLIB = blib/arch
@@ -82,15 +82,15 @@ PREFIX = $(SITEPREFIX)
 PERLPREFIX = /usr/local
 SITEPREFIX = /usr/local
 VENDORPREFIX = 
-INSTALLPRIVLIB = /usr/local/lib/perl5/5.20.1
+INSTALLPRIVLIB = /usr/local/lib/perl5/5.22.0
 DESTINSTALLPRIVLIB = $(DESTDIR)$(INSTALLPRIVLIB)
-INSTALLSITELIB = /usr/local/lib/perl5/site_perl/5.20.1
+INSTALLSITELIB = /usr/local/lib/perl5/site_perl/5.22.0
 DESTINSTALLSITELIB = $(DESTDIR)$(INSTALLSITELIB)
 INSTALLVENDORLIB = 
 DESTINSTALLVENDORLIB = $(DESTDIR)$(INSTALLVENDORLIB)
-INSTALLARCHLIB = /usr/local/lib/perl5/5.20.1/x86_64-linux
+INSTALLARCHLIB = /usr/local/lib/perl5/5.22.0/darwin-2level
 DESTINSTALLARCHLIB = $(DESTDIR)$(INSTALLARCHLIB)
-INSTALLSITEARCH = /usr/local/lib/perl5/site_perl/5.20.1/x86_64-linux
+INSTALLSITEARCH = /usr/local/lib/perl5/site_perl/5.22.0/darwin-2level
 DESTINSTALLSITEARCH = $(DESTDIR)$(INSTALLSITEARCH)
 INSTALLVENDORARCH = 
 DESTINSTALLVENDORARCH = $(DESTDIR)$(INSTALLVENDORARCH)
@@ -118,16 +118,18 @@ INSTALLSITEMAN3DIR = /usr/local/share/man/man3
 DESTINSTALLSITEMAN3DIR = $(DESTDIR)$(INSTALLSITEMAN3DIR)
 INSTALLVENDORMAN3DIR = 
 DESTINSTALLVENDORMAN3DIR = $(DESTDIR)$(INSTALLVENDORMAN3DIR)
-PERL_LIB = /usr/local/lib/perl5/5.20.1
-PERL_ARCHLIB = /usr/local/lib/perl5/5.20.1/x86_64-linux
+PERL_LIB = /usr/local/lib/perl5/5.22.0
+PERL_ARCHLIB = /usr/local/lib/perl5/5.22.0/darwin-2level
+PERL_ARCHLIBDEP = /usr/local/lib/perl5/5.22.0/darwin-2level
 LIBPERL_A = libperl.a
 FIRST_MAKEFILE = Makefile
 MAKEFILE_OLD = Makefile.old
 MAKE_APERL_FILE = Makefile.aperl
 PERLMAINCC = $(CC)
-PERL_INC = /usr/local/lib/perl5/5.20.1/x86_64-linux/CORE
-PERL = /usr/local/bin/perl
-FULLPERL = /usr/local/bin/perl
+PERL_INC = /usr/local/lib/perl5/5.22.0/darwin-2level/CORE
+PERL_INCDEP = /usr/local/lib/perl5/5.22.0/darwin-2level/CORE
+PERL = "/opt/local/bin/perl"
+FULLPERL = "/opt/local/bin/perl"
 ABSPERL = $(PERL)
 PERLRUN = $(PERL)
 FULLPERLRUN = $(FULLPERL)
@@ -140,9 +142,9 @@ PERM_DIR = 755
 PERM_RW = 644
 PERM_RWX = 755
 
-MAKEMAKER   = /usr/local/lib/perl5/5.20.1/ExtUtils/MakeMaker.pm
-MM_VERSION  = 6.98
-MM_REVISION = 69800
+MAKEMAKER   = /usr/local/lib/perl5/5.22.0/ExtUtils/MakeMaker.pm
+MM_VERSION  = 7.0401
+MM_REVISION = 70401
 
 # FULLEXT = Pathname for extension directory (eg Foo/Bar/Oracle).
 # BASEEXT = Basename part of FULLEXT. May be just equal FULLEXT. (eg Oracle)
@@ -183,10 +185,12 @@ MAN3PODS = lib/Perlito5.pm \
 	lib/Perlito5/Perl6/Emitter.pm \
 	lib/Perlito5/Perl6/Runtime.pm \
 	lib/Perlito5/X64/Assembler.pm \
-	lib/Perlito5/XS/Emitter.pm
+	lib/Perlito5/XS/Emitter.pm \
+	lib/Perlito5X/Class/Data/Inheritable.pm \
+	lib/Perlito5X/Exception/Class/Base.pm
 
 # Where is the Config information that we are using/depend on
-CONFIGDEP = $(PERL_ARCHLIB)$(DFSEP)Config.pm $(PERL_INC)$(DFSEP)config.h
+CONFIGDEP = $(PERL_ARCHLIBDEP)$(DFSEP)Config.pm $(PERL_INCDEP)$(DFSEP)config.h
 
 # Where to build things
 INST_LIBDIR      = $(INST_LIB)
@@ -202,6 +206,7 @@ INST_BOOT        =
 # Extra linker info
 EXPORT_LIST        = 
 PERL_ARCHIVE       = 
+PERL_ARCHIVEDEP    = 
 PERL_ARCHIVE_AFTER = 
 
 
@@ -229,6 +234,7 @@ TO_INST_PM = lib/Perlito5.pm \
 	lib/Perlito5/Grammar/Statement.pm \
 	lib/Perlito5/Grammar/String.pm \
 	lib/Perlito5/Grammar/Use.pm \
+	lib/Perlito5/JSON.pm \
 	lib/Perlito5/Java/Emitter.pm \
 	lib/Perlito5/Java/Runtime.pm \
 	lib/Perlito5/Javascript2/Array.pm \
@@ -258,7 +264,9 @@ TO_INST_PM = lib/Perlito5.pm \
 	lib/Perlito5/X64/Assembler.pm \
 	lib/Perlito5/XS/Emitter.pm \
 	lib/Perlito5X/Carp.pm \
+	lib/Perlito5X/Class/Data/Inheritable.pm \
 	lib/Perlito5X/Dumper.pm \
+	lib/Perlito5X/Exception/Class/Base.pm \
 	lib/Perlito5X/Exporter.pm \
 	lib/Perlito5X/bytes.pm \
 	lib/Perlito5X/encoding.pm \
@@ -315,6 +323,8 @@ PM_TO_BLIB = lib/Perlito5.pm \
 	blib/lib/Perlito5/Grammar/String.pm \
 	lib/Perlito5/Grammar/Use.pm \
 	blib/lib/Perlito5/Grammar/Use.pm \
+	lib/Perlito5/JSON.pm \
+	blib/lib/Perlito5/JSON.pm \
 	lib/Perlito5/Java/Emitter.pm \
 	blib/lib/Perlito5/Java/Emitter.pm \
 	lib/Perlito5/Java/Runtime.pm \
@@ -373,8 +383,12 @@ PM_TO_BLIB = lib/Perlito5.pm \
 	blib/lib/Perlito5/XS/Emitter.pm \
 	lib/Perlito5X/Carp.pm \
 	blib/lib/Perlito5X/Carp.pm \
+	lib/Perlito5X/Class/Data/Inheritable.pm \
+	blib/lib/Perlito5X/Class/Data/Inheritable.pm \
 	lib/Perlito5X/Dumper.pm \
 	blib/lib/Perlito5X/Dumper.pm \
+	lib/Perlito5X/Exception/Class/Base.pm \
+	blib/lib/Perlito5X/Exception/Class/Base.pm \
 	lib/Perlito5X/Exporter.pm \
 	blib/lib/Perlito5X/Exporter.pm \
 	lib/Perlito5X/bytes.pm \
@@ -392,7 +406,7 @@ PM_TO_BLIB = lib/Perlito5.pm \
 
 
 # --- MakeMaker platform_constants section:
-MM_Unix_VERSION = 6.98
+MM_Unix_VERSION = 7.0401
 PERL_MALLOC_DEF = -DPERL_EXTMALLOC_DEF -Dmalloc=Perl_malloc -Dfree=Perl_mfree -Drealloc=Perl_realloc -Dcalloc=Perl_calloc
 
 
@@ -443,7 +457,7 @@ makemakerdflt : all
 
 
 # --- MakeMaker dist section:
-TAR = tar
+TAR = COPY_EXTENDED_ATTRIBUTES_DISABLE=1 COPYFILE_DISABLE=1 tar
 TARFLAGS = cvf
 ZIP = zip
 ZIPFLAGS = -r
@@ -458,7 +472,7 @@ RCS_LABEL = rcs -Nv$(VERSION_SYM): -q
 DIST_CP = best
 DIST_DEFAULT = tardist
 DISTNAME = Perlito5
-DISTVNAME = Perlito5-9.000
+DISTVNAME = Perlito5-9.001
 
 
 # --- MakeMaker macro section:
@@ -629,8 +643,10 @@ manifypods : pure_all  \
 	lib/Perlito5/Perl6/Emitter.pm \
 	lib/Perlito5/Perl6/Runtime.pm \
 	lib/Perlito5/X64/Assembler.pm \
-	lib/Perlito5/XS/Emitter.pm
-	$(NOECHO) $(POD2MAN) --section=3 --perm_rw=$(PERM_RW) \
+	lib/Perlito5/XS/Emitter.pm \
+	lib/Perlito5X/Class/Data/Inheritable.pm \
+	lib/Perlito5X/Exception/Class/Base.pm
+	$(NOECHO) $(POD2MAN) --section=3 --perm_rw=$(PERM_RW) -u \
 	  lib/Perlito5.pm $(INST_MAN3DIR)/Perlito5.$(MAN3EXT) \
 	  lib/Perlito5/AST.pm $(INST_MAN3DIR)/Perlito5::AST.$(MAN3EXT) \
 	  lib/Perlito5/Compiler.pm $(INST_MAN3DIR)/Perlito5::Compiler.$(MAN3EXT) \
@@ -649,7 +665,9 @@ manifypods : pure_all  \
 	  lib/Perlito5/Perl6/Emitter.pm $(INST_MAN3DIR)/Perlito5::Perl6::Emitter.$(MAN3EXT) \
 	  lib/Perlito5/Perl6/Runtime.pm $(INST_MAN3DIR)/Perlito5::Perl6::Runtime.$(MAN3EXT) \
 	  lib/Perlito5/X64/Assembler.pm $(INST_MAN3DIR)/Perlito5::X64::Assembler.$(MAN3EXT) \
-	  lib/Perlito5/XS/Emitter.pm $(INST_MAN3DIR)/Perlito5::XS::Emitter.$(MAN3EXT) 
+	  lib/Perlito5/XS/Emitter.pm $(INST_MAN3DIR)/Perlito5::XS::Emitter.$(MAN3EXT) \
+	  lib/Perlito5X/Class/Data/Inheritable.pm $(INST_MAN3DIR)/Perlito5X::Class::Data::Inheritable.$(MAN3EXT) \
+	  lib/Perlito5X/Exception/Class/Base.pm $(INST_MAN3DIR)/Perlito5X::Exception::Class::Base.$(MAN3EXT) 
 
 
 
@@ -724,7 +742,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) 'configure_requires:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  ExtUtils::MakeMaker: '\''0'\''' >> META_new.yml
 	$(NOECHO) $(ECHO) 'dynamic_config: 1' >> META_new.yml
-	$(NOECHO) $(ECHO) 'generated_by: '\''ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.142690'\''' >> META_new.yml
+	$(NOECHO) $(ECHO) 'generated_by: '\''ExtUtils::MakeMaker version 7.0401, CPAN::Meta::Converter version 2.150001'\''' >> META_new.yml
 	$(NOECHO) $(ECHO) 'license: artistic_2' >> META_new.yml
 	$(NOECHO) $(ECHO) 'meta-spec:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  url: http://module-build.sourceforge.net/META-spec-v1.4.html' >> META_new.yml
@@ -736,7 +754,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '    - inc' >> META_new.yml
 	$(NOECHO) $(ECHO) 'requires:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  perl: '\''5.006'\''' >> META_new.yml
-	$(NOECHO) $(ECHO) 'version: '\''9.000'\''' >> META_new.yml
+	$(NOECHO) $(ECHO) 'version: '\''9.001'\''' >> META_new.yml
 	-$(NOECHO) $(MV) META_new.yml $(DISTVNAME)/META.yml
 	$(NOECHO) $(ECHO) Generating META.json
 	$(NOECHO) $(ECHO) '{' > META_new.json
@@ -745,7 +763,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '      "Flavio S. Glock <fglock@gmail.com>"' >> META_new.json
 	$(NOECHO) $(ECHO) '   ],' >> META_new.json
 	$(NOECHO) $(ECHO) '   "dynamic_config" : 1,' >> META_new.json
-	$(NOECHO) $(ECHO) '   "generated_by" : "ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.142690",' >> META_new.json
+	$(NOECHO) $(ECHO) '   "generated_by" : "ExtUtils::MakeMaker version 7.0401, CPAN::Meta::Converter version 2.150001",' >> META_new.json
 	$(NOECHO) $(ECHO) '   "license" : [' >> META_new.json
 	$(NOECHO) $(ECHO) '      "artistic_2"' >> META_new.json
 	$(NOECHO) $(ECHO) '   ],' >> META_new.json
@@ -778,7 +796,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '      }' >> META_new.json
 	$(NOECHO) $(ECHO) '   },' >> META_new.json
 	$(NOECHO) $(ECHO) '   "release_status" : "stable",' >> META_new.json
-	$(NOECHO) $(ECHO) '   "version" : "9.000"' >> META_new.json
+	$(NOECHO) $(ECHO) '   "version" : "9.001"' >> META_new.json
 	$(NOECHO) $(ECHO) '}' >> META_new.json
 	-$(NOECHO) $(MV) META_new.json $(DISTVNAME)/META.json
 
@@ -922,88 +940,88 @@ doc__install : doc_site_install
 
 pure_perl_install :: all
 	$(NOECHO) $(MOD_INSTALL) \
-		read $(PERL_ARCHLIB)/auto/$(FULLEXT)/.packlist \
-		write $(DESTINSTALLARCHLIB)/auto/$(FULLEXT)/.packlist \
-		$(INST_LIB) $(DESTINSTALLPRIVLIB) \
-		$(INST_ARCHLIB) $(DESTINSTALLARCHLIB) \
-		$(INST_BIN) $(DESTINSTALLBIN) \
-		$(INST_SCRIPT) $(DESTINSTALLSCRIPT) \
-		$(INST_MAN1DIR) $(DESTINSTALLMAN1DIR) \
-		$(INST_MAN3DIR) $(DESTINSTALLMAN3DIR)
+		read "$(PERL_ARCHLIB)/auto/$(FULLEXT)/.packlist" \
+		write "$(DESTINSTALLARCHLIB)/auto/$(FULLEXT)/.packlist" \
+		"$(INST_LIB)" "$(DESTINSTALLPRIVLIB)" \
+		"$(INST_ARCHLIB)" "$(DESTINSTALLARCHLIB)" \
+		"$(INST_BIN)" "$(DESTINSTALLBIN)" \
+		"$(INST_SCRIPT)" "$(DESTINSTALLSCRIPT)" \
+		"$(INST_MAN1DIR)" "$(DESTINSTALLMAN1DIR)" \
+		"$(INST_MAN3DIR)" "$(DESTINSTALLMAN3DIR)"
 	$(NOECHO) $(WARN_IF_OLD_PACKLIST) \
-		$(SITEARCHEXP)/auto/$(FULLEXT)
+		"$(SITEARCHEXP)/auto/$(FULLEXT)"
 
 
 pure_site_install :: all
 	$(NOECHO) $(MOD_INSTALL) \
-		read $(SITEARCHEXP)/auto/$(FULLEXT)/.packlist \
-		write $(DESTINSTALLSITEARCH)/auto/$(FULLEXT)/.packlist \
-		$(INST_LIB) $(DESTINSTALLSITELIB) \
-		$(INST_ARCHLIB) $(DESTINSTALLSITEARCH) \
-		$(INST_BIN) $(DESTINSTALLSITEBIN) \
-		$(INST_SCRIPT) $(DESTINSTALLSITESCRIPT) \
-		$(INST_MAN1DIR) $(DESTINSTALLSITEMAN1DIR) \
-		$(INST_MAN3DIR) $(DESTINSTALLSITEMAN3DIR)
+		read "$(SITEARCHEXP)/auto/$(FULLEXT)/.packlist" \
+		write "$(DESTINSTALLSITEARCH)/auto/$(FULLEXT)/.packlist" \
+		"$(INST_LIB)" "$(DESTINSTALLSITELIB)" \
+		"$(INST_ARCHLIB)" "$(DESTINSTALLSITEARCH)" \
+		"$(INST_BIN)" "$(DESTINSTALLSITEBIN)" \
+		"$(INST_SCRIPT)" "$(DESTINSTALLSITESCRIPT)" \
+		"$(INST_MAN1DIR)" "$(DESTINSTALLSITEMAN1DIR)" \
+		"$(INST_MAN3DIR)" "$(DESTINSTALLSITEMAN3DIR)"
 	$(NOECHO) $(WARN_IF_OLD_PACKLIST) \
-		$(PERL_ARCHLIB)/auto/$(FULLEXT)
+		"$(PERL_ARCHLIB)/auto/$(FULLEXT)"
 
 pure_vendor_install :: all
 	$(NOECHO) $(MOD_INSTALL) \
-		read $(VENDORARCHEXP)/auto/$(FULLEXT)/.packlist \
-		write $(DESTINSTALLVENDORARCH)/auto/$(FULLEXT)/.packlist \
-		$(INST_LIB) $(DESTINSTALLVENDORLIB) \
-		$(INST_ARCHLIB) $(DESTINSTALLVENDORARCH) \
-		$(INST_BIN) $(DESTINSTALLVENDORBIN) \
-		$(INST_SCRIPT) $(DESTINSTALLVENDORSCRIPT) \
-		$(INST_MAN1DIR) $(DESTINSTALLVENDORMAN1DIR) \
-		$(INST_MAN3DIR) $(DESTINSTALLVENDORMAN3DIR)
+		read "$(VENDORARCHEXP)/auto/$(FULLEXT)/.packlist" \
+		write "$(DESTINSTALLVENDORARCH)/auto/$(FULLEXT)/.packlist" \
+		"$(INST_LIB)" "$(DESTINSTALLVENDORLIB)" \
+		"$(INST_ARCHLIB)" "$(DESTINSTALLVENDORARCH)" \
+		"$(INST_BIN)" "$(DESTINSTALLVENDORBIN)" \
+		"$(INST_SCRIPT)" "$(DESTINSTALLVENDORSCRIPT)" \
+		"$(INST_MAN1DIR)" "$(DESTINSTALLVENDORMAN1DIR)" \
+		"$(INST_MAN3DIR)" "$(DESTINSTALLVENDORMAN3DIR)"
 
 
 doc_perl_install :: all
-	$(NOECHO) $(ECHO) Appending installation info to $(DESTINSTALLARCHLIB)/perllocal.pod
-	-$(NOECHO) $(MKPATH) $(DESTINSTALLARCHLIB)
+	$(NOECHO) $(ECHO) Appending installation info to "$(DESTINSTALLARCHLIB)/perllocal.pod"
+	-$(NOECHO) $(MKPATH) "$(DESTINSTALLARCHLIB)"
 	-$(NOECHO) $(DOC_INSTALL) \
 		"Module" "$(NAME)" \
-		"installed into" "$(INSTALLPRIVLIB)" \
+		"installed into" $(INSTALLPRIVLIB) \
 		LINKTYPE "$(LINKTYPE)" \
 		VERSION "$(VERSION)" \
 		EXE_FILES "$(EXE_FILES)" \
-		>> $(DESTINSTALLARCHLIB)/perllocal.pod
+		>> "$(DESTINSTALLARCHLIB)/perllocal.pod"
 
 doc_site_install :: all
-	$(NOECHO) $(ECHO) Appending installation info to $(DESTINSTALLARCHLIB)/perllocal.pod
-	-$(NOECHO) $(MKPATH) $(DESTINSTALLARCHLIB)
+	$(NOECHO) $(ECHO) Appending installation info to "$(DESTINSTALLARCHLIB)/perllocal.pod"
+	-$(NOECHO) $(MKPATH) "$(DESTINSTALLARCHLIB)"
 	-$(NOECHO) $(DOC_INSTALL) \
 		"Module" "$(NAME)" \
-		"installed into" "$(INSTALLSITELIB)" \
+		"installed into" $(INSTALLSITELIB) \
 		LINKTYPE "$(LINKTYPE)" \
 		VERSION "$(VERSION)" \
 		EXE_FILES "$(EXE_FILES)" \
-		>> $(DESTINSTALLARCHLIB)/perllocal.pod
+		>> "$(DESTINSTALLARCHLIB)/perllocal.pod"
 
 doc_vendor_install :: all
-	$(NOECHO) $(ECHO) Appending installation info to $(DESTINSTALLARCHLIB)/perllocal.pod
-	-$(NOECHO) $(MKPATH) $(DESTINSTALLARCHLIB)
+	$(NOECHO) $(ECHO) Appending installation info to "$(DESTINSTALLARCHLIB)/perllocal.pod"
+	-$(NOECHO) $(MKPATH) "$(DESTINSTALLARCHLIB)"
 	-$(NOECHO) $(DOC_INSTALL) \
 		"Module" "$(NAME)" \
-		"installed into" "$(INSTALLVENDORLIB)" \
+		"installed into" $(INSTALLVENDORLIB) \
 		LINKTYPE "$(LINKTYPE)" \
 		VERSION "$(VERSION)" \
 		EXE_FILES "$(EXE_FILES)" \
-		>> $(DESTINSTALLARCHLIB)/perllocal.pod
+		>> "$(DESTINSTALLARCHLIB)/perllocal.pod"
 
 
 uninstall :: uninstall_from_$(INSTALLDIRS)dirs
 	$(NOECHO) $(NOOP)
 
 uninstall_from_perldirs ::
-	$(NOECHO) $(UNINSTALL) $(PERL_ARCHLIB)/auto/$(FULLEXT)/.packlist
+	$(NOECHO) $(UNINSTALL) "$(PERL_ARCHLIB)/auto/$(FULLEXT)/.packlist"
 
 uninstall_from_sitedirs ::
-	$(NOECHO) $(UNINSTALL) $(SITEARCHEXP)/auto/$(FULLEXT)/.packlist
+	$(NOECHO) $(UNINSTALL) "$(SITEARCHEXP)/auto/$(FULLEXT)/.packlist"
 
 uninstall_from_vendordirs ::
-	$(NOECHO) $(UNINSTALL) $(VENDORARCHEXP)/auto/$(FULLEXT)/.packlist
+	$(NOECHO) $(UNINSTALL) "$(VENDORARCHEXP)/auto/$(FULLEXT)/.packlist"
 
 
 # --- MakeMaker force section:
@@ -1035,7 +1053,7 @@ $(FIRST_MAKEFILE) : Makefile.PL $(CONFIGDEP)
 
 # --- MakeMaker makeaperl section ---
 MAP_TARGET    = perl
-FULLPERL      = /usr/local/bin/perl
+FULLPERL      = "/opt/local/bin/perl"
 
 $(MAP_TARGET) :: static $(MAKE_APERL_FILE)
 	$(MAKE) $(USEMAKEFILE) $(MAKE_APERL_FILE) $@
@@ -1043,7 +1061,7 @@ $(MAP_TARGET) :: static $(MAKE_APERL_FILE)
 $(MAKE_APERL_FILE) : $(FIRST_MAKEFILE) pm_to_blib
 	$(NOECHO) $(ECHO) Writing \"$(MAKE_APERL_FILE)\" for this $(MAP_TARGET)
 	$(NOECHO) $(PERLRUNINST) \
-		Makefile.PL DIR= \
+		Makefile.PL DIR="" \
 		MAKEFILE=$(MAKE_APERL_FILE) LINKTYPE=static \
 		MAKEAPERL=1 NORECURS=1 CCCDLFLAGS=
 
@@ -1084,7 +1102,7 @@ ppd :
 	$(NOECHO) $(ECHO) '    <AUTHOR>Flavio S. Glock &lt;fglock@gmail.com&gt;</AUTHOR>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <IMPLEMENTATION>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '        <PERLCORE VERSION="5,006,0,0" />' >> $(DISTNAME).ppd
-	$(NOECHO) $(ECHO) '        <ARCHITECTURE NAME="x86_64-linux-5.20" />' >> $(DISTNAME).ppd
+	$(NOECHO) $(ECHO) '        <ARCHITECTURE NAME="darwin-2level-5.22" />' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '        <CODEBASE HREF="" />' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    </IMPLEMENTATION>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '</SOFTPKG>' >> $(DISTNAME).ppd
@@ -1118,6 +1136,7 @@ pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	  lib/Perlito5/Grammar/Statement.pm blib/lib/Perlito5/Grammar/Statement.pm \
 	  lib/Perlito5/Grammar/String.pm blib/lib/Perlito5/Grammar/String.pm \
 	  lib/Perlito5/Grammar/Use.pm blib/lib/Perlito5/Grammar/Use.pm \
+	  lib/Perlito5/JSON.pm blib/lib/Perlito5/JSON.pm \
 	  lib/Perlito5/Java/Emitter.pm blib/lib/Perlito5/Java/Emitter.pm \
 	  lib/Perlito5/Java/Runtime.pm blib/lib/Perlito5/Java/Runtime.pm \
 	  lib/Perlito5/Javascript2/Array.pm blib/lib/Perlito5/Javascript2/Array.pm \
@@ -1132,8 +1151,7 @@ pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	  lib/Perlito5/Javascript3/IO.pm blib/lib/Perlito5/Javascript3/IO.pm \
 	  lib/Perlito5/Javascript3/Runtime.pm blib/lib/Perlito5/Javascript3/Runtime.pm \
 	  lib/Perlito5/Javascript3/Sprintf.pm blib/lib/Perlito5/Javascript3/Sprintf.pm \
-	  lib/Perlito5/Macro.pm blib/lib/Perlito5/Macro.pm 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
+	  lib/Perlito5/Macro.pm blib/lib/Perlito5/Macro.pm \
 	  lib/Perlito5/Match.pm blib/lib/Perlito5/Match.pm \
 	  lib/Perlito5/Perl5/Emitter.pm blib/lib/Perlito5/Perl5/Emitter.pm \
 	  lib/Perlito5/Perl5/PrettyPrinter.pm blib/lib/Perlito5/Perl5/PrettyPrinter.pm \
@@ -1148,7 +1166,9 @@ pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	  lib/Perlito5/X64/Assembler.pm blib/lib/Perlito5/X64/Assembler.pm \
 	  lib/Perlito5/XS/Emitter.pm blib/lib/Perlito5/XS/Emitter.pm \
 	  lib/Perlito5X/Carp.pm blib/lib/Perlito5X/Carp.pm \
+	  lib/Perlito5X/Class/Data/Inheritable.pm blib/lib/Perlito5X/Class/Data/Inheritable.pm \
 	  lib/Perlito5X/Dumper.pm blib/lib/Perlito5X/Dumper.pm \
+	  lib/Perlito5X/Exception/Class/Base.pm blib/lib/Perlito5X/Exception/Class/Base.pm \
 	  lib/Perlito5X/Exporter.pm blib/lib/Perlito5X/Exporter.pm \
 	  lib/Perlito5X/bytes.pm blib/lib/Perlito5X/bytes.pm \
 	  lib/Perlito5X/encoding.pm blib/lib/Perlito5X/encoding.pm \
