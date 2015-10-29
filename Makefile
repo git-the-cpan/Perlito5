@@ -15,7 +15,7 @@
 #     BUILD_REQUIRES => { Test::More=>q[0] }
 #     CONFIGURE_REQUIRES => { ExtUtils::MakeMaker=>q[0] }
 #     LICENSE => q[artistic_2]
-#     META_MERGE => { meta-spec=>{ version=>q[2] }, no_index=>{ directory=>[q[lib/Perlito5X], q[lib/Perlito5], q[src5]], package=>[q[name]] }, resources=>{ repository=>{ type=>q[git], url=>q[https://github.com/fglock/Perlito.git], web=>q[https://github.com/fglock/Perlito] } } }
+#     META_MERGE => { meta-spec=>{ version=>q[2] }, no_index=>{ directory=>[q[lib/Perlito5X], q[lib/Perlito5], q[src]], package=>[q[name]] }, resources=>{ repository=>{ type=>q[git], url=>q[https://github.com/fglock/Perlito.git], web=>q[https://github.com/fglock/Perlito] } } }
 #     MIN_PERL_VERSION => q[5.006]
 #     NAME => q[Perlito5]
 #     PL_FILES => {  }
@@ -62,11 +62,11 @@ DIRFILESEP = /
 DFSEP = $(DIRFILESEP)
 NAME = Perlito5
 NAME_SYM = Perlito5
-VERSION = 9.003
+VERSION = 9.004
 VERSION_MACRO = VERSION
-VERSION_SYM = 9_003
+VERSION_SYM = 9_004
 DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-XS_VERSION = 9.003
+XS_VERSION = 9.004
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
 INST_ARCHLIB = blib/arch
@@ -170,6 +170,7 @@ H_FILES  =
 MAN1PODS = 
 MAN3PODS = lib/Perlito5.pm \
 	lib/Perlito5/AST.pm \
+	lib/Perlito5/CompileTime/Emitter.pm \
 	lib/Perlito5/Compiler.pm \
 	lib/Perlito5/Emitter/Token.pm \
 	lib/Perlito5/Eval.pm \
@@ -213,6 +214,8 @@ PERL_ARCHIVE_AFTER =
 
 TO_INST_PM = lib/Perlito5.pm \
 	lib/Perlito5/AST.pm \
+	lib/Perlito5/CompileTime/Closure.pm \
+	lib/Perlito5/CompileTime/Emitter.pm \
 	lib/Perlito5/Compiler.pm \
 	lib/Perlito5/Dumper.pm \
 	lib/Perlito5/Emitter/Token.pm \
@@ -280,6 +283,10 @@ PM_TO_BLIB = lib/Perlito5.pm \
 	blib/lib/Perlito5.pm \
 	lib/Perlito5/AST.pm \
 	blib/lib/Perlito5/AST.pm \
+	lib/Perlito5/CompileTime/Closure.pm \
+	blib/lib/Perlito5/CompileTime/Closure.pm \
+	lib/Perlito5/CompileTime/Emitter.pm \
+	blib/lib/Perlito5/CompileTime/Emitter.pm \
 	lib/Perlito5/Compiler.pm \
 	blib/lib/Perlito5/Compiler.pm \
 	lib/Perlito5/Dumper.pm \
@@ -473,7 +480,7 @@ RCS_LABEL = rcs -Nv$(VERSION_SYM): -q
 DIST_CP = best
 DIST_DEFAULT = tardist
 DISTNAME = Perlito5
-DISTVNAME = Perlito5-9.003
+DISTVNAME = Perlito5-9.004
 
 
 # --- MakeMaker macro section:
@@ -628,6 +635,7 @@ POD2MAN = $(POD2MAN_EXE)
 manifypods : pure_all  \
 	lib/Perlito5.pm \
 	lib/Perlito5/AST.pm \
+	lib/Perlito5/CompileTime/Emitter.pm \
 	lib/Perlito5/Compiler.pm \
 	lib/Perlito5/Emitter/Token.pm \
 	lib/Perlito5/Eval.pm \
@@ -650,6 +658,7 @@ manifypods : pure_all  \
 	$(NOECHO) $(POD2MAN) --section=3 --perm_rw=$(PERM_RW) -u \
 	  lib/Perlito5.pm $(INST_MAN3DIR)/Perlito5.$(MAN3EXT) \
 	  lib/Perlito5/AST.pm $(INST_MAN3DIR)/Perlito5::AST.$(MAN3EXT) \
+	  lib/Perlito5/CompileTime/Emitter.pm $(INST_MAN3DIR)/Perlito5::CompileTime::Emitter.$(MAN3EXT) \
 	  lib/Perlito5/Compiler.pm $(INST_MAN3DIR)/Perlito5::Compiler.$(MAN3EXT) \
 	  lib/Perlito5/Emitter/Token.pm $(INST_MAN3DIR)/Perlito5::Emitter::Token.$(MAN3EXT) \
 	  lib/Perlito5/Eval.pm $(INST_MAN3DIR)/Perlito5::Eval.$(MAN3EXT) \
@@ -755,14 +764,14 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '    - inc' >> META_new.yml
 	$(NOECHO) $(ECHO) '    - lib/Perlito5X' >> META_new.yml
 	$(NOECHO) $(ECHO) '    - lib/Perlito5' >> META_new.yml
-	$(NOECHO) $(ECHO) '    - src5' >> META_new.yml
+	$(NOECHO) $(ECHO) '    - src' >> META_new.yml
 	$(NOECHO) $(ECHO) '  package:' >> META_new.yml
 	$(NOECHO) $(ECHO) '    - name' >> META_new.yml
 	$(NOECHO) $(ECHO) 'requires:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  perl: '\''5.006'\''' >> META_new.yml
 	$(NOECHO) $(ECHO) 'resources:' >> META_new.yml
 	$(NOECHO) $(ECHO) '  repository: https://github.com/fglock/Perlito.git' >> META_new.yml
-	$(NOECHO) $(ECHO) 'version: '\''9.003'\''' >> META_new.yml
+	$(NOECHO) $(ECHO) 'version: '\''9.004'\''' >> META_new.yml
 	-$(NOECHO) $(MV) META_new.yml $(DISTVNAME)/META.yml
 	$(NOECHO) $(ECHO) Generating META.json
 	$(NOECHO) $(ECHO) '{' > META_new.json
@@ -786,7 +795,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '         "inc",' >> META_new.json
 	$(NOECHO) $(ECHO) '         "lib/Perlito5X",' >> META_new.json
 	$(NOECHO) $(ECHO) '         "lib/Perlito5",' >> META_new.json
-	$(NOECHO) $(ECHO) '         "src5"' >> META_new.json
+	$(NOECHO) $(ECHO) '         "src"' >> META_new.json
 	$(NOECHO) $(ECHO) '      ],' >> META_new.json
 	$(NOECHO) $(ECHO) '      "package" : [' >> META_new.json
 	$(NOECHO) $(ECHO) '         "name"' >> META_new.json
@@ -817,7 +826,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '         "web" : "https://github.com/fglock/Perlito"' >> META_new.json
 	$(NOECHO) $(ECHO) '      }' >> META_new.json
 	$(NOECHO) $(ECHO) '   },' >> META_new.json
-	$(NOECHO) $(ECHO) '   "version" : "9.003"' >> META_new.json
+	$(NOECHO) $(ECHO) '   "version" : "9.004"' >> META_new.json
 	$(NOECHO) $(ECHO) '}' >> META_new.json
 	-$(NOECHO) $(MV) META_new.json $(DISTVNAME)/META.json
 
@@ -1135,6 +1144,8 @@ pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
 	  lib/Perlito5.pm blib/lib/Perlito5.pm \
 	  lib/Perlito5/AST.pm blib/lib/Perlito5/AST.pm \
+	  lib/Perlito5/CompileTime/Closure.pm blib/lib/Perlito5/CompileTime/Closure.pm \
+	  lib/Perlito5/CompileTime/Emitter.pm blib/lib/Perlito5/CompileTime/Emitter.pm \
 	  lib/Perlito5/Compiler.pm blib/lib/Perlito5/Compiler.pm \
 	  lib/Perlito5/Dumper.pm blib/lib/Perlito5/Dumper.pm \
 	  lib/Perlito5/Emitter/Token.pm blib/lib/Perlito5/Emitter/Token.pm \

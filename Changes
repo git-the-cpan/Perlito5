@@ -1,4 +1,11 @@
 
+9.004 cpan:Perlito5   2015-10-29
+* Perlito5 (Perl 5 compiler):
+- parser fixes, such as:
+-- don't autoquote in list context: @x{x, y}
+-- block vs. hash: {%{$_[0]}}
+- fix CPAN test list
+
 9.003 cpan:Perlito5   2015-10-21
 * Perlito5 (Perl 5 compiler):
 - fix CPAN index
