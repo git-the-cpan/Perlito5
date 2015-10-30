@@ -1,4 +1,5 @@
 bin/perlito5
+Build.PL
 Changes
 lib/Perlito5.pm
 lib/Perlito5/AST.pm
@@ -59,10 +60,8 @@ lib/Perlito5/X64/Assembler.pm
 lib/Perlito5/XS/Emitter.pm
 lib/Perlito5X/bytes.pm
 lib/Perlito5X/Carp.pm
-lib/Perlito5X/Class/Data/Inheritable.pm
 lib/Perlito5X/Dumper.pm
 lib/Perlito5X/encoding.pm
-lib/Perlito5X/Exception/Class/Base.pm
 lib/Perlito5X/Exporter.pm
 lib/Perlito5X/feature.pm
 lib/Perlito5X/strict.pm
@@ -168,7 +167,6 @@ t/redo.t
 t/reg_unsafe.t
 t/say.t
 t/shebang.t
-t/sleep_time.t
 t/splice.t
 t/while.t
 META.json                                Module JSON meta-data (added by MakeMaker)
