@@ -1,6 +1,7 @@
 use v5;
 
 use Perlito5::AST;
+use Perlito5::AST::Captures;
 use Perlito5::Dumper;
 use strict;
 
@@ -856,14 +857,6 @@ package Perlito5::Java::LexicalBlock;
         return ( @pre, @str );
     }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures {
-        my ($self) = @_;
-        my @var;
-        for my $stmt (@{$self->{block}}) {
-            push @var, $stmt->emit_java_get_captures();
-        }
-        return @var;
-    }
 }
 
 package Perlito5::AST::CompUnit;
@@ -972,7 +965,7 @@ package Perlito5::AST::CompUnit;
         }
 
         $str .= Perlito5::Java::emit_wrap_java(-1,
-             "class Test {",
+             "class Main {",
                [ "public static void main(String[] args) throws Exception {",
                    [ "PlEnv.init(args);",
                      "int want = PlCx.VOID;",
@@ -1003,7 +996,6 @@ package Perlito5::AST::CompUnit;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures { () }
 }
 
 package Perlito5::AST::Int;
@@ -1024,7 +1016,6 @@ package Perlito5::AST::Int;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures { () }
 }
 
 package Perlito5::AST::Num;
@@ -1035,7 +1026,6 @@ package Perlito5::AST::Num;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures { () }
 }
 
 package Perlito5::AST::Buf;
@@ -1046,7 +1036,6 @@ package Perlito5::AST::Buf;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures { () }
 }
 
 package Perlito5::AST::Block;
@@ -1085,14 +1074,6 @@ package Perlito5::AST::Block;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures {
-        my ($self) = @_;
-        my @var;
-        for my $stmt (@{$self->{stmts}}) {
-            push @var, $stmt->emit_java_get_captures();
-        }
-        return @var;
-    }
 }
 
 package Perlito5::AST::Index;
@@ -1278,14 +1259,6 @@ package Perlito5::AST::Index;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures {
-        my $self      = shift;
-        my @var;
-        push @var, $self->{obj}->emit_java_get_captures();
-        push @var, $self->{index_exp}->emit_java_get_captures();
-        return @var;
-    }
-
 }
 
 package Perlito5::AST::Lookup;
@@ -1315,11 +1288,10 @@ package Perlito5::AST::Lookup;
             $v = Perlito5::AST::Apply->new( code => 'prefix:<%>', namespace => $self->{obj}->namespace, arguments => $self->{obj}->arguments )
                 if $self->{obj}->isa('Perlito5::AST::Apply');
 
-            return 'p5list_lookup_slice('
-                        . $v->emit_java($level, 'list') . ', '
-                        . Perlito5::Java::to_list([$self->{index_exp}], $level) . ', '
-                        . Perlito5::Java::to_context($wantarray)
-                   . ')'
+            return $v->emit_java($level, 'list') . ".$method("
+                        . Perlito5::Java::to_context($wantarray) . ', '
+                        . Perlito5::Java::to_list([$self->{index_exp}], $level)
+                    . ')'
         }
         if (  (  $self->{obj}->isa('Perlito5::AST::Apply')
               && $self->{obj}->{code} eq 'prefix:<%>'
@@ -1366,20 +1338,11 @@ package Perlito5::AST::Lookup;
                 if $self->{obj}->isa('Perlito5::AST::Var');
             $v = Perlito5::AST::Apply->new( code => 'prefix:<%>', namespace => $self->{obj}->namespace, arguments => $self->{obj}->arguments )
                 if $self->{obj}->isa('Perlito5::AST::Apply');
-            return Perlito5::Java::emit_wrap_java($level, 
-                    'var a = [];',
-                    'var v = ' . Perlito5::Java::to_list([$self->{index_exp}], $level) . ';',
-                    'var src=' . Perlito5::Java::to_list([$arguments], $level) . ";",
-                    'var out=' . $v->emit_java($level) . ";",
-                    'var tmp' . ";",
-                    'for (var i=0, l=v.length; i<l; ++i)' . '{',
-                          [ 'tmp = src.hget(i);',
-                            'out.hset(v[i], tmp);',
-                            'a.push(tmp)',
-                          ],
-                    '}',
-                    'return a',
-            )
+            return $self->emit_java_container($level). '.hset('
+                    . Perlito5::Java::to_context($wantarray) . ', '
+                    . Perlito5::Java::to_list([$arguments], $level) . ', '
+                    . Perlito5::Java::to_list([$self->{index_exp}], $level)
+                . ')'
         }
         if ($localize) {
             return $self->emit_java_container($level) . '.hget_lvalue_local('
@@ -1460,14 +1423,6 @@ package Perlito5::AST::Lookup;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures {
-        my $self      = shift;
-        my @var;
-        push @var, $self->{obj}->emit_java_get_captures();
-        push @var, $self->{index_exp}->emit_java_get_captures();
-        return @var;
-    }
-
 }
 
 package Perlito5::AST::Var;
@@ -1688,10 +1643,6 @@ package Perlito5::AST::Var;
 
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures {
-        my $self = shift;
-        return ($self); 
-    }
 }
 
 package Perlito5::AST::Decl;
@@ -1781,7 +1732,6 @@ package Perlito5::AST::Decl;
         return ($self);
     }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures { return { dont => $_[0]{var}{_id} } }
 }
 
 package Perlito5::AST::Call;
@@ -1944,7 +1894,6 @@ package Perlito5::AST::Call;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures { () }
 }
 
 package Perlito5::AST::Apply;
@@ -2604,20 +2553,24 @@ package Perlito5::AST::Apply;
             if ($arg->isa( 'Perlito5::AST::Lookup' )) {
                 my $v = $arg->obj;
                 if (  $v->isa('Perlito5::AST::Var')
-                   && $v->sigil eq '$'
+                   && ($v->sigil eq '$' || $v->sigil eq '@')
                    )
                 {
-                    return $v->emit_java($level, $wantarray) . '.delete(' . $arg->autoquote($arg->{index_exp})->emit_java($level) . ')';
+                    return $v->emit_java($level, $wantarray) . '.delete('
+                        . Perlito5::Java::to_context($wantarray) . ', '
+                        . $arg->autoquote($arg->{index_exp})->emit_java($level) . ')';
                 }
                 return $v->emit_java($level, $wantarray, 'hash') . '.delete(' . $arg->autoquote($arg->{index_exp})->emit_java($level) . ')';
             }
             if ($arg->isa( 'Perlito5::AST::Index' )) {
                 my $v = $arg->obj;
                 if (  $v->isa('Perlito5::AST::Var')
-                   && $v->sigil eq '$'
+                   && ($v->sigil eq '$' || $v->sigil eq '@')
                    )
                 {
-                    return $v->emit_java($level, $wantarray) . '.delete(' . $arg->{index_exp}->emit_java($level) . ')';
+                    return $v->emit_java($level, $wantarray) . '.delete('
+                        . Perlito5::Java::to_context($wantarray) . ', '
+                        . $arg->{index_exp}->emit_java($level) . ')';
                 }
                 return $v->emit_java($level, $wantarray, 'array') . '.delete(' . $arg->{index_exp}->emit_java($level) . ')';
             }
@@ -3538,25 +3491,6 @@ package Perlito5::AST::Apply;
         }
         return ()
     }
-    sub emit_java_get_captures {
-        my $self      = shift;
-        my $code = $self->{code};
-        my @var;
-        push @var, $code->emit_java_get_captures()
-            if ref($code);
-        push @var, map  { $_->emit_java_get_captures() }
-                        @{ $self->{arguments} }
-                if $self->{arguments};
-        if ($code eq 'my' || $code eq 'our' || $code eq 'state') {
-            push @var, ( map {     ref($_) eq 'Perlito5::AST::Var'
-                             ? ( { dont => $_->{_id} } )
-                             : ()
-                         }
-                         @{ $self->{arguments} }
-                   );
-        }
-        return @var;
-    }
 }
 
 package Perlito5::AST::If;
@@ -3617,15 +3551,6 @@ package Perlito5::AST::If;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures {
-        my $self      = shift;
-        my @var;
-        push @var, $self->{cond}->emit_java_get_captures();
-        push @var, $self->{body}->emit_java_get_captures();
-        push @var, $self->{otherwise}->emit_java_get_captures();
-        return @var;
-    }
-
 }
 
 
@@ -3685,13 +3610,6 @@ package Perlito5::AST::When;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures {
-        my $self      = shift;
-        my @var;
-        push @var, $self->{cond}->emit_java_get_captures();
-        push @var, $self->{body}->emit_java_get_captures();
-        return @var;
-    }
 }
 
 
@@ -3757,14 +3675,6 @@ package Perlito5::AST::While;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures {
-        my $self      = shift;
-        my @var;
-        push @var, $self->{cond}->emit_java_get_captures();
-        push @var, $self->{body}->emit_java_get_captures();
-        return @var;
-    }
-
 }
 
 package Perlito5::AST::For;
@@ -3860,22 +3770,6 @@ package Perlito5::AST::For;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures {
-        my $self      = shift;
-        my @var;
-        my $body =
-              ref($self->{body}) ne 'Perlito5::AST::Block'
-            ? [ $self->{body} ]
-            : $self->{body}{stmts};
-        push @var, map { $_->emit_java_get_captures() }
-                @$body,
-                $self->{topic},
-                ( ref( $self->{cond} ) eq 'ARRAY'
-                   ? @{ $self->{cond} }
-                   : $self->{cond} );
-        return @var;
-    }
-
 }
 
 package Perlito5::AST::Sub;
@@ -3891,7 +3785,11 @@ package Perlito5::AST::Sub;
         my $block = Perlito5::Java::LexicalBlock->new( block => $self->{block}{stmts} );
 
         # get list of captured variables, including inner blocks
-        my @captured = $block->emit_java_get_captures();
+        my @captured;
+        for my $stmt (@{$self->{block}{stmts}}) {
+            push @captured, $stmt->get_captures();
+        }
+
         my %dont_capture = map { $_->{dont} ? ( $_->{dont} => 1 ) : () } @captured;
         my %capture = map { $_->{dont} ? ()
                           : $dont_capture{ $_->{_id} } ? ()
@@ -3961,9 +3859,6 @@ package Perlito5::AST::Sub;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures {
-        $_[0]->{block}->emit_java_get_captures()
-    }
 }
 
 package Perlito5::AST::Use;
@@ -3980,7 +3875,6 @@ package Perlito5::AST::Use;
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
-    sub emit_java_get_captures { () }
 }
 
 1;

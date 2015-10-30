@@ -26,4 +26,4 @@ requires:
   perl: '5.006'
 resources:
   repository: https://github.com/fglock/Perlito.git
-version: '9.004'
+version: '9.005'

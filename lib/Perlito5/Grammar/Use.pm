@@ -385,7 +385,7 @@
         local $Perlito5::LINE_NUMBER = 1;
         my $realfilename = $INC{$filename};
         open(FILE, '<', $realfilename) or die('Cannot read ' . $realfilename . ': ' . ${'!'} . chr(10));
-        local ${'/'} = undef;
+        local $/ = undef;
         my $source = <FILE>;
         close(FILE);
         my $m = Perlito5::Grammar::exp_stmts($source, 0);
@@ -449,7 +449,7 @@
         };
         my $realfilename = $INC{$filename};
         open(FILE, '<', $realfilename) or die('Cannot read ' . $realfilename . ': ' . ${'!'} . chr(10));
-        local ${'/'} = undef;
+        local $/ = undef;
         my $source = <FILE>;
         close(FILE);
         return $source

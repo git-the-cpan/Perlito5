@@ -79,6 +79,13 @@ sub autoquote {
           && ($index->code eq 'list:<,>')
           )
     {
+
+        my $obj = $self->obj;
+        if ($obj->sigil eq '@') {
+            #  @v{ $a, $b, $c }
+            return $index;
+        }
+
         #  $v{ $a, $b, $c }
         my $args = $index->arguments;
         return Perlito5::AST::Apply->new(

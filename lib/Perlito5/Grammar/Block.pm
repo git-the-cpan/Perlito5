@@ -36,7 +36,7 @@
     sub Perlito5::Grammar::Block::eval_begin_block {
         local ${'@'};
         my $code = 'package ' . $Perlito5::PKG_NAME . ';' . chr(10) . $_[0];
-        eval('{ ' . $code . ' }; 1') or die('Error in BEGIN block: ' . ${'@'})
+        eval(Perlito5::CompileTime::Dumper::generate_eval_string('{ ' . $code . ' }; 1')) or die('Error in BEGIN block: ' . ${'@'})
     }
     sub Perlito5::Grammar::Block::opt_continue_block {
         my $str = $_[0];

@@ -1132,6 +1132,10 @@ class PlLvalueRef extends PlReference {
     private PlObject o;
     public static final PlString REF = new PlString("SCALAR");
 
+    public String toString() {
+        int id = System.identityHashCode(this.o);
+        return this.ref().toString() + "(0x" + Integer.toHexString(id) + ")";
+    }
     public PlLvalueRef(PlLvalue o) {
         this.o = o;
     }
@@ -1155,7 +1159,8 @@ class PlArrayRef extends PlArray {
     public static final PlString REF = new PlString("ARRAY");
 
     public String toString() {
-        return this.ref().toString() + "(0x" + Integer.toHexString(this.hashCode()) + ")";
+        int id = System.identityHashCode(this.a);
+        return this.ref().toString() + "(0x" + Integer.toHexString(id) + ")";
     }
     public PlArrayRef() {
         this.each_iterator = 0;
@@ -1201,7 +1206,8 @@ class PlHashRef extends PlHash {
     public static final PlString REF = new PlString("HASH");
 
     public String toString() {
-        return this.ref().toString() + "(0x" + Integer.toHexString(this.hashCode()) + ")";
+        int id = System.identityHashCode(this.h);
+        return this.ref().toString() + "(0x" + Integer.toHexString(id) + ")";
     }
     public PlHashRef() {
         this.h = new HashMap<String, PlObject>();
@@ -2220,6 +2226,19 @@ class PlHash extends PlObject {
         }
         return o;
     }
+    public PlObject hget(int want, PlArray a) {
+        PlArray aa = new PlArray();
+
+        for (int i = 0; i < a.to_int(); i++) {
+            PlObject r = this.hget(a.aget(i));
+            aa.push(r);
+        }
+        if (want == PlCx.LIST) {
+            return aa;
+        }
+        return aa.pop();
+    }
+
     public PlObject hget_lvalue(PlObject i) {
         PlObject o = this.h.get(i.toString());
         if (o == null) {
@@ -2378,16 +2397,39 @@ class PlHash extends PlObject {
     public PlObject hset(String s, PlLvalue v) {
         return this.hset(s, v.get());
     }
+    public PlObject hset(int want, PlArray s, PlArray v) {
+        PlArray aa = new PlArray();
+
+        for (int i = 0; i < v.to_int(); i++){
+            aa.push(this.hset(v.aget(i), s.aget(i)));
+        };
+        if (want == PlCx.LIST) {
+            return aa;
+        }
+        return aa.pop();
+    }
 
     public PlObject exists(PlObject i) {
         return this.h.containsKey(i) ? PlCx.TRUE : PlCx.FALSE;
     }
     public PlObject delete(PlObject i) {
-        PlObject r = this.h.remove(i);
+        PlObject r = this.h.remove(i.toString());
         if (r == null) {
             return PlCx.UNDEF;
         }
         return r;
+    }
+    public PlObject delete(int want, PlArray a) {
+        PlArray aa = new PlArray();
+
+        for (int i = 0; i < a.to_int(); i++) {
+            PlObject r = this.delete(a.aget(i));
+            aa.push(r);
+        }
+        if (want == PlCx.LIST) {
+            return aa;
+        }
+        return aa.pop();
     }
     public PlObject values() {
         PlArray aa = new PlArray();
