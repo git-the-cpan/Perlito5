@@ -1,5 +1,4 @@
 bin/perlito5
-Build.PL
 Changes
 lib/Perlito5.pm
 lib/Perlito5/AST.pm
@@ -60,10 +59,8 @@ lib/Perlito5/X64/Assembler.pm
 lib/Perlito5/XS/Emitter.pm
 lib/Perlito5X/bytes.pm
 lib/Perlito5X/Carp.pm
-lib/Perlito5X/Class/Data/Inheritable.pm
 lib/Perlito5X/Dumper.pm
 lib/Perlito5X/encoding.pm
-lib/Perlito5X/Exception/Class/Base.pm
 lib/Perlito5X/Exporter.pm
 lib/Perlito5X/feature.pm
 lib/Perlito5X/strict.pm
@@ -98,7 +95,6 @@ t/030-num.t
 t/035-num-octal.t
 t/040-op.t
 t/060-anon-sub-lex-block.t
-t/070-anon-sub.t
 t/075-anon-sub-prototype.t
 t/080-array.t
 t/090-bind.t
@@ -132,7 +128,6 @@ t/400-autoload-method.t
 t/500-regex-escape.t
 t/510-string-overload.t
 t/520-block-loop.t
-t/530-hash-slice.t
 t/540-range.t
 t/550-flip-flop.t
 t/560-syntax-deref.t
@@ -167,7 +162,6 @@ t/print.t
 t/push.t
 t/qq.t
 t/redo.t
-t/reg_unsafe.t
 t/say.t
 t/shebang.t
 t/splice.t

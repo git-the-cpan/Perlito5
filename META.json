@@ -4,7 +4,7 @@
       "Flavio S. Glock <fglock@gmail.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 7.0401, CPAN::Meta::Converter version 2.150001",
+   "generated_by" : "ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.142690",
    "license" : [
       "artistic_2"
    ],
@@ -38,7 +38,7 @@
       },
       "runtime" : {
          "requires" : {
-            "perl" : "5.006"
+            "perl" : "5.014"
          }
       }
    },
@@ -50,5 +50,5 @@
          "web" : "https://github.com/fglock/Perlito"
       }
    },
-   "version" : "9.008"
+   "version" : "9.009"
 }

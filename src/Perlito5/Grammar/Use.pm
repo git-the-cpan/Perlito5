@@ -154,8 +154,7 @@ token stmt_use {
                         mod       => $full_ident,
                         arguments => $list
                     );
-                parse_time_eval($ast);
-                $MATCH->{capture} = $ast;
+                $MATCH->{capture} = parse_time_eval($ast);
             }
         }
     |
@@ -175,8 +174,18 @@ sub parse_time_eval {
 
     $arguments = [] unless defined $arguments;
 
+    # the first time the module is seen,
+    # load the module source code
+    # and create a syntax tree
+    # TODO: the module should run in a new scope
+    #   without access to the current lexical variables
+    my $comp_units = [];
+    expand_use($comp_units, $ast);
+
     if ( $Perlito5::EXPAND_USE ) {
-        # normal "use" is not disabled, go for it
+        # normal "use" is not disabled, go for it:
+        #   - require the module (evaluate the source code)
+        #   - run import()
 
         my $current_module_name = $Perlito5::PKG_NAME;
 
@@ -208,6 +217,19 @@ sub parse_time_eval {
                 }
             }
         }
+    }
+
+    if (@$comp_units) {
+        # TODO - move @comp_units to top-level of the AST
+        return Perlito5::AST::Block->new( stmts => $comp_units );
+    }
+    else {
+        # when seeing "use" a second time, no further code is generated
+        return Perlito5::AST::Apply->new(
+            code      => 'undef',
+            namespace => '',
+            arguments => []
+        );
     }
 }
 
@@ -291,6 +313,17 @@ sub expand_use {
         die('Syntax Error near ', $m->{'to'})
     }
 
+    if ($ENV{PERLITO5DEV}) {
+        # "new BEGIN"
+        push @$comp_units,
+            Perlito5::AST::CompUnit->new(
+                name => 'main',
+                body => Perlito5::Match::flat($m),
+            );
+        return;
+    }
+
+    # "old BEGIN"
     push @$comp_units, @{ add_comp_unit(
         [
             Perlito5::AST::CompUnit->new(
@@ -299,9 +332,11 @@ sub expand_use {
             )
         ]
     ) };
+    return;
 }
 
 sub add_comp_unit {
+    # TODO - this subroutine is obsolete
     my $parse = shift;
     my $comp_units = [];
 

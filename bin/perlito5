@@ -4,6 +4,7 @@ use v5;
 
 package Perlito5;
 use feature 'say';
+use Perlito5;
 use Perlito5::Compiler;
 use Perlito5::CompileTime::Emitter;
 use Perlito5::CompileTime::Dumper;
@@ -43,7 +44,7 @@ use Perlito5::Java::Runtime;
 use strict;
 
 my $_V5_COMPILER_NAME    = 'Perlito5';
-my $_V5_COMPILER_VERSION = '9.0';
+my $_V5_COMPILER_VERSION = $Perlito5::VERSION;
 my $source      = '';
 my $backend     = $^O;
 my $execute     = 1;
@@ -80,7 +81,8 @@ perlito5 [switches] [programfile]
                     expand 'use' statements at compile time
     --boilerplate --noboilerplate
                     emits or not boilerplate code
-    --bootstrapping set this when compiling the compiler
+    --bootstrapping set this when compiling the compiler,
+                    otherwise the new subroutine definitions will overwrite the current compiler
 ";
 my $copyright_message = <<"EOT";
 This is Perlito5 $_V5_COMPILER_VERSION, an implementation of the Perl language.
@@ -324,21 +326,28 @@ if ($backend && @ARGV) {
             }
             else {
                 my $comp_units;
-                if ($expand_use) {
-                    my $ok;
-                    eval {
-                        $comp_units = Perlito5::Grammar::Use::add_comp_unit(Perlito5::Match::flat($m));
-                        $ok = 1;
-                    };
-                    if ( !$ok ) {
-                        my $error = $@
-                            || "Unknown error loading a module";
-                        warn $error;
-                        exit(255);
-                    }
+                if ($ENV{PERLITO5DEV}) {
+                    # "new BEGIN"
+                    $comp_units = Perlito5::Match::flat($m);
                 }
                 else {
-                    $comp_units = Perlito5::Match::flat($m);
+                    # "old BEGIN"
+                    if ($expand_use) {
+                        my $ok;
+                        eval {
+                            $comp_units = Perlito5::Grammar::Use::add_comp_unit(Perlito5::Match::flat($m));
+                            $ok = 1;
+                        };
+                        if ( !$ok ) {
+                            my $error = $@
+                                || "Unknown error loading a module";
+                            warn $error;
+                            exit(255);
+                        }
+                    }
+                    else {
+                        $comp_units = Perlito5::Match::flat($m);
+                    }
                 }
 
                 $comp_units = [
