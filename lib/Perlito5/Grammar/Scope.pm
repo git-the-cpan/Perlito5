@@ -128,6 +128,16 @@ sub check_variable_declarations {
                 $var->{_decl} = 'global';
                 $var->{_namespace} = $Perlito5::PKG_NAME;
             }
+
+            if ($ENV{PERLITO5DEV}) {
+                my $compiletime_name =
+                      ($var->{_real_sigil} || $var->{sigil})
+                    . ($var->{namespace} || $var->{_namespace} || "C_")
+                    . "::" . $var->{name}
+                    . ($var->{_decl} eq "global" ? "" : "_" . $var->{_id});
+                $Perlito5::GLOBAL->{$compiletime_name} = { value => undef, ast => $var };
+            }
+
         }
     }
     push @{ $Perlito5::SCOPE->{block} }, @Perlito5::SCOPE_STMT;

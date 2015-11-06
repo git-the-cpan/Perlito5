@@ -210,13 +210,29 @@ token named_sub_def {
                 $block->{name} = $full_name;
             }
         }
-        $MATCH->{capture} = Perlito5::AST::Sub->new(
+        my $sub = Perlito5::AST::Sub->new(
             name       => $name, 
             namespace  => $namespace,
             sig        => $sig, 
             block      => $MATCH->{_tmp},
             attributes => $attributes,
-        ) 
+        );
+
+        if ($ENV{PERLITO5DEV}) {
+            if ($name) {
+                # add named sub to SCOPE
+                my $full_name = "${namespace}::$name";
+                $Perlito5::GLOBAL->{$full_name} = $sub;
+                # runtime effect of subroutine declaration is "undef"
+                $sub = Perlito5::AST::Apply->new(
+                    code      => 'undef',
+                    namespace => '',
+                    arguments => []
+                );
+            }
+        }
+
+        $MATCH->{capture} = $sub;
     }
 };
 
