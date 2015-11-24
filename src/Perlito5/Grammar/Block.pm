@@ -11,6 +11,8 @@ our %Named_block = (
     CHECK     => 1,
     INIT      => 1,
     END       => 1,
+    AUTOLOAD  => 1,
+    DESTROY   => 1,
 );
 
 sub block {
@@ -46,18 +48,43 @@ sub block {
     return $m;
 }
 
+sub eval_end_block {
+    # execute "eval" on this block,
+    # without access to compile-time lexical variables.
+    # compile-time globals are still a problem.
+    my ($block, $phase) = @_;
+    local $@;
+    my @data = $block->emit_perl5();
+    my $out = [];
+    Perlito5::Perl5::PrettyPrinter::pretty_print( \@data, 0, $out );
+    my $code = "package $Perlito5::PKG_NAME;\n"
+             . "sub " . join( '', @$out ) . "\n";
+    # say "END block: $code";
+
+    # we add some extra information to the data, to make things more "dumpable"
+    eval Perlito5::CompileTime::Dumper::generate_eval_string( $code )
+    # eval "{ $code }; 1"
+    or die "Error in $phase block: " . $@;
+}
+
 sub eval_begin_block {
     # execute "eval" on this block,
     # without access to compile-time lexical variables.
     # compile-time globals are still a problem.
+    my $block = shift;
     local $@;
+    my @data = $block->emit_perl5();
+    my $out = [];
+    Perlito5::Perl5::PrettyPrinter::pretty_print( \@data, 0, $out );
     my $code = "package $Perlito5::PKG_NAME;\n"
-             . $_[0];
-    # say $code;
+             . join( '', @$out ) . "; 1\n";
+    # say "BEGIN block: $code";
 
+    local ${^GLOBAL_PHASE};
+    Perlito5::set_global_phase("BEGIN");
     # eval-string inside BEGIN block
     # we add some extra information to the data, to make things more "dumpable"
-    eval Perlito5::CompileTime::Dumper::generate_eval_string( "{ $code }; 1" )
+    eval Perlito5::CompileTime::Dumper::generate_eval_string( $code )
     # eval "{ $code }; 1"
     or die "Error in BEGIN block: " . $@;
 }
@@ -104,6 +131,14 @@ sub anon_block {
     return $m;
 }
 
+sub ast_undef {
+    Perlito5::AST::Apply->new(
+        code => 'undef',
+        namespace => '',
+        arguments => []
+    );
+}
+
 sub special_named_block {
     my $str = $_[0];
     my $pos = $_[1];
@@ -128,16 +163,37 @@ sub special_named_block {
     $compile_block->{type} = 'sub';
     $compile_block->{name} = $block_name;
   
-    if ($block_name eq 'BEGIN') {
+    if ($block_name eq 'INIT') {
+        push @Perlito5::INIT_BLOCK, eval_end_block( $block, 'INIT' );
+        $m->{capture} = ast_undef();
+    }
+    elsif ($block_name eq 'END') {
+        unshift @Perlito5::END_BLOCK, eval_end_block( $block, 'END' );
+        $m->{capture} = ast_undef();
+    }
+    elsif ($block_name eq 'CHECK') {
+        unshift @Perlito5::CHECK_BLOCK, eval_end_block( $block, 'CHECK' );
+        $m->{capture} = ast_undef();
+    }
+    elsif ($block_name eq 'UNITCHECK') {
+        unshift @Perlito5::UNITCHECK_BLOCK, eval_end_block( $block, 'UNITCHECK' );
+        $m->{capture} = ast_undef();
+    }
+    elsif ($block_name eq 'BEGIN') {
         # say "BEGIN $block_start ", $m->{to}, "[", substr($str, $block_start, $m->{to} - $block_start), "]";
         # local $Perlito5::PKG_NAME = $Perlito5::PKG_NAME;  # BUG - this doesn't work
         local $Perlito5::PHASE = 'BEGIN';
-        eval_begin_block( substr($str, $block_start, $m->{to} - $block_start) );
+        eval_begin_block( $block );
+        $m->{capture} = ast_undef();
+    }
+    elsif ($block_name eq 'AUTOLOAD' || $block_name eq 'DESTROY') {
         $m->{capture} = 
-            Perlito5::AST::Apply->new(
-                code => 'undef',
-                namespace => '',
-                arguments => []
+            Perlito5::AST::Sub->new(
+                'attributes' => [],
+                'block' => $block,
+                'name' => $block_name,
+                'namespace' => $Perlito5::PKG_NAME,
+                'sig' => undef,
             );
     }
     else {

@@ -133,6 +133,7 @@ t/520-block-loop.t
 t/540-range.t
 t/550-flip-flop.t
 t/560-syntax-deref.t
+t/570-syntax-deref-string.t
 t/arith.t
 t/assign_scalar.t
 t/block.t
