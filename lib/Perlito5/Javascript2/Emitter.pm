@@ -706,6 +706,7 @@ package Perlito5::AST::CompUnit;
         my $level = 0;
         my $wantarray = 'void';
         my $str;
+        $str .= Perlito5::Compiler::do_not_edit("//");
         if ( $options{expand_use} ) {
             $str .= Perlito5::Javascript2::Runtime->emit_javascript2();
             $str .= Perlito5::Javascript2::Array->emit_javascript2();
@@ -2736,6 +2737,10 @@ package Perlito5::AST::Apply;
             {
                 $effective_name = "CORE::$name";
                 $sig = $Perlito5::CORE_PROTO->{$effective_name};
+            }
+            elsif ( exists $Perlito5::PACKAGES->{$name} ) {
+                # bareword is a package name
+                return Perlito5::Javascript2::escape_string($name);
             }
             else {
                 # this subroutine was never declared
