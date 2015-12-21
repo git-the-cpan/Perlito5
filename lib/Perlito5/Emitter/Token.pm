@@ -264,7 +264,6 @@ sub emit_perl5 {
     my $self = $_[0];
 
     '(do { ' 
-        . '$MATCH->{str} = $str; '
         . $self->{closure} 
         . '; 1 })'
 }
@@ -282,7 +281,7 @@ sub emit_perl5 {
 
     '(do { ' .
         'my $tmp = $MATCH; ' .
-        '$MATCH = { \'str\' => $str, \'from\' => $tmp->{to}, \'to\' => $tmp->{to} }; ' .
+        '$MATCH = { \'from\' => $tmp->{to}, \'to\' => $tmp->{to} }; ' .
         'my $res = ' .
             $self->{rule_exp}->emit_perl5() .
         '; ' .
@@ -304,7 +303,7 @@ sub emit_perl5 {
 
     '(do { ' .
         'my $tmp = $MATCH; ' .
-        '$MATCH = { \'str\' => $str, \'from\' => $tmp->{to}, \'to\' => $tmp->{to} }; ' .
+        '$MATCH = { \'from\' => $tmp->{to}, \'to\' => $tmp->{to} }; ' .
         'my $res = ' .
             $self->{rule_exp}->emit_perl5() .
         '; ' .

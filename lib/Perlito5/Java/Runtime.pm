@@ -1429,6 +1429,9 @@ class PlLvalue extends PlObject {
 
     // Note: several versions of set()
     public PlObject set(PlObject o) {
+        if (o == null) {
+            o = PlCx.UNDEF;
+        }
         this.o = o;
         return this;
     }
