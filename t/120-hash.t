@@ -2,7 +2,7 @@ use v5;
 use strict;
 use feature 'say';
 
-say '1..16';
+say '1..19';
 my %a;
 say 'ok 1 - create hash';
 $a{abc} = 3;
@@ -73,4 +73,14 @@ print 'not ' if $v{'1230'}     != 120; say "ok 13 - no autoquote for function ca
 print 'not ' if $v{'x2'}       != 121; say "ok 14 - autoquote for bareword without colons";
 print 'not ' if $v{'1232'}     != 122; say "ok 15 - no autoquote for function call without parenthesis";
 print 'not ' if $v{'main::x4'} != 123; say "ok 16 - autoquote for bareword with colons";
+
+my %delete_from;
+my $non_exist = delete($delete_from{'foo'});
+print 'not ' if defined($non_exist); say "ok 17 - delete non-existent elem should return undef";
+
+my %delete_with_val = ('d' => '24', 'e' => '100');
+my $key = delete($delete_with_val{'d'});
+print 'not ' if ($key ne '24'); say "ok 18 - delete returns the key";
+my $key2 = $delete_with_val{'d'};
+print 'not ' if defined($key2); say "ok 19 - delete deletes the key.";
 

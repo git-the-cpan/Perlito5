@@ -12,9 +12,9 @@ package Perlito5::Java;
     # 'The::Class' => {
     #       import              => 'full.path.Class',   # Java class path
     #       perl_package        => 'The::Class',        # Perl package name
-    #       java_type           => 'Class',             # generated, can be overriden: 'Class<String>'
-    #       perl_to_java        => 'to_TheClass',       # generated
-    #       java_native_to_perl => 'PlClass',            # generated
+    #       java_type           => 'Class',             # generated, can be overridden: 'Class<String>'
+    #       perl_to_java        => 'to_TheClass',       # generated, can be overridden
+    #       java_native_to_perl => 'pClass',            # generated
     # }
     my %Java_class;
 
@@ -37,6 +37,89 @@ package Perlito5::Java;
     }
     sub get_java_var_info {
         return \%Java_var;
+    }
+    sub set_java_class_defaults {
+        my ($perl_package, $java_import) = @_;
+        # import              => 'full.path.Class',   # Java class path
+        # perl_package        => 'The::Class',        # Perl package name
+        # java_type           => 'Class',             # generated, can be overridden: 'Class<String>'
+        # perl_to_java        => 'to_TheClass',       # generated, can be overridden
+        # java_native_to_perl => 'pClass',            # generated
+        #
+        my $Java_class = Perlito5::Java::get_java_class_info();
+        my @parts = split /\./, $java_import;
+        $Java_class->{$perl_package}->{java_type} //= $parts[-1];
+        $Java_class->{$perl_package}->{java_native_to_perl} //= 'p' . $Java_class->{$perl_package}->{java_type};
+        # "List<String>" becomes "PlList_String_"
+        $Java_class->{$perl_package}->{java_native_to_perl} =~ s/[<>]/_/g;
+        my $perl_to_java = $perl_package;
+        $perl_to_java =~ s/:://g;
+        $Java_class->{$perl_package}->{perl_to_java} //= "to_${perl_to_java}";
+        $Java_class->{$perl_package}->{perl_package} = $perl_package;
+    }
+    sub init_java_class {
+        my $Java_class = Perlito5::Java::get_java_class_info();
+        $Java_class->{String} = {
+            java_type           => 'String',
+            java_native_to_perl => 'PlString',
+            perl_to_java        => 'toString',
+            perl_package        => 'String',
+        };
+        $Java_class->{Long} = {
+            java_type           => 'Long',
+            java_native_to_perl => 'PlInt',
+            perl_to_java        => 'to_long',
+            perl_package        => 'Long',
+        };
+        $Java_class->{Integer} = {
+            java_type           => 'Integer',
+            java_native_to_perl => 'PlInt',
+            perl_to_java        => 'to_long',
+            perl_package        => 'Integer',
+        };
+        $Java_class->{Boolean} = {
+            java_type           => 'Boolean',
+            java_native_to_perl => 'PlBool',
+            perl_to_java        => 'to_bool',
+            perl_package        => 'Boolean',
+        };
+        $Java_class->{Double} = {
+            java_type           => 'Double',
+            java_native_to_perl => 'PlDouble',
+            perl_to_java        => 'to_double',
+            perl_package        => 'Double',
+        };
+        $Java_class->{Byte} = {
+            java_type           => 'Byte',
+            java_native_to_perl => 'PlInt',
+            perl_to_java        => 'to_byte',
+            perl_package        => 'Byte',
+        };
+        $Java_class->{Short} = {
+            java_type           => 'Short',
+            java_native_to_perl => 'PlInt',
+            perl_to_java        => 'to_short',
+            perl_package        => 'Short',
+        };
+        $Java_class->{Float} = {
+            java_type           => 'Float',
+            java_native_to_perl => 'PlDouble',
+            perl_to_java        => 'to_float',
+            perl_package        => 'Float',
+        };
+        # TODO
+        # $Java_class->{Object} = {
+        #     java_type           => 'Object',
+        #     java_native_to_perl => 'PlObject',
+        #     perl_to_java        => 'to_object',
+        #     perl_package        => 'Object',
+        # };
+        $Java_class->{Character} = {
+            java_type           => 'Character',
+            java_native_to_perl => 'PlString',
+            perl_to_java        => 'to_character',
+            perl_package        => 'Character',
+        };
     }
 
     our %Java_loop_label;
@@ -241,7 +324,7 @@ package Perlito5::Java;
                 elsif ( $is_apply && exists $op_to_num{ $cond->code } ) {
                     push @out, '(' . $cond->emit_java($level, $wantarray) . ').' .
                         (${$cond->{arguments}}[0]->isa( 'Perlito5::AST::Num' ) || ${$cond->{arguments}}[1]->isa( 'Perlito5::AST::Num' )
-                            ? 'to_double()' : 'to_int()');
+                            ? 'to_double()' : 'to_long()');
                 }
                 elsif ( $is_apply && exists $op_to_str{ $cond->code } ) {
                     push @out, '(' . $cond->emit_java($level, $wantarray) . ').toString()';
@@ -322,7 +405,7 @@ package Perlito5::Java;
             else {
                 # TODO - this converts to "double" - it should be int/double depending on context
                 if ($type eq 'int') {
-                    return 'new PlInt(' . $cond->emit_java($level, $wantarray) . '.to_int())';
+                    return 'new PlInt(' . $cond->emit_java($level, $wantarray) . '.to_long())';
                 }
                 return 'new PlDouble(' . $cond->emit_java($level, $wantarray) . '.to_double())';
             }
@@ -372,18 +455,18 @@ package Perlito5::Java;
     }
 
     sub is_scalar {
-            !$_[0]->isa( 'Perlito5::AST::Int' )
-         && !$_[0]->isa( 'Perlito5::AST::Num' )
-         && !$_[0]->isa( 'Perlito5::AST::Buf' )
-         && !$_[0]->isa( 'Perlito5::AST::Sub' )
-         && !($_[0]->isa( 'Perlito5::AST::Var' ) && $_[0]->{sigil} eq '$')
-         && !($_[0]->isa( 'Perlito5::AST::Apply' ) 
-             && (  exists($op_to_str{ $_[0]->{code} })
-                || exists($op_to_num{ $_[0]->{code} })
-                || exists($op_to_bool{ $_[0]->{code} })
-                #  || $_[0]->{code} eq 'prefix:<\\>'    -- \(@a) is a list
-                )
-             )
+            $_[0]->isa( 'Perlito5::AST::Int' )
+         || $_[0]->isa( 'Perlito5::AST::Num' )
+         || $_[0]->isa( 'Perlito5::AST::Buf' )
+         || $_[0]->isa( 'Perlito5::AST::Sub' )
+         || ($_[0]->isa( 'Perlito5::AST::Var' ) && $_[0]->{sigil} eq '$')
+         || ($_[0]->isa( 'Perlito5::AST::Apply' ) 
+            && (  exists($op_to_str{ $_[0]->{code} })
+               || exists($op_to_num{ $_[0]->{code} })
+               || exists($op_to_bool{ $_[0]->{code} })
+               #  || $_[0]->{code} eq 'prefix:<\\>'    -- \(@a) is a list
+               )
+            )
     }
 
     sub to_list {
@@ -771,12 +854,12 @@ package Perlito5::Java::LexicalBlock;
                     [ "throw e;" ],
                 "}",
                 "catch(PlDieException e) {",
-                    [ 'PlV.set("main|v_@", e.ret);',
+                    [ 'PlV.set("main::v_@", e.ret);',
                       "return PlCx.UNDEF;",
                     ],
                 "}",
                 "catch(Exception e) {",
-                    [ 'PlV.set("main|v_@", new PlString(e.getMessage()));',
+                    [ 'PlV.set("main::v_@", new PlString(e.getMessage()));',
                       "return PlCx.UNDEF;",
                     ],
                 "}",
@@ -889,6 +972,7 @@ package Perlito5::AST::CompUnit;
         $str .= Perlito5::Compiler::do_not_edit("//");
 
         # look for special 'Java' packages
+        Perlito5::Java::init_java_class();
         my $Java_class = Perlito5::Java::get_java_class_info();
         for my $comp_unit ( @$comp_units ) {
             for my $unit_stmt ( @{ $comp_unit->{body} } ) {
@@ -944,17 +1028,36 @@ package Perlito5::AST::CompUnit;
                         or die "error in arguments to generate Java class:\n$@\n${args_perl5}";
 
 
-                    die "missing 'import' argument to generate Java class"
-                        unless $Java_class->{$class}->{import};
-                    my @parts = split /\./, $Java_class->{$class}->{import};
-                    $Java_class->{$class}->{java_type} //= $parts[-1];
-                    $Java_class->{$class}->{java_native_to_perl} //= 'p' . $Java_class->{$class}->{java_type};
-                    # "List<String>" becomes "PlList_String_"
-                    $Java_class->{$class}->{java_native_to_perl} =~ s/[<>]/_/g;
-                    my $perl_to_java = $class;
-                    $perl_to_java =~ s/:://g;
-                    $Java_class->{$class}->{perl_to_java} //= "to_${perl_to_java}";
-                    $Java_class->{$class}->{perl_package} = $class;
+                    if ($Java_class->{$class}->{import}) {
+                        Perlito5::Java::set_java_class_defaults(
+                            $class, $Java_class->{$class}->{import},
+                        );
+                    }
+                    elsif ($Java_class->{$class}->{extends}) {
+                        # extends => 'JavaObject',              # Perl package name (a class imported from Java)
+                        # methods => [ ... ]
+
+                        my $extended = $Java_class->{ $Java_class->{$class}->{extends} };
+                        if ($extended) {
+                            $Java_class->{$class}->{extends_java_type} = $extended->{java_type};
+
+                        }
+                        else {
+                            die "cannot extend class '" . $Java_class->{$class}->{extends} . "' because it was not declared";
+                        }
+
+                        my $perl_to_java = $class;
+                        $perl_to_java =~ s/:://g;
+                        Perlito5::Java::set_java_class_defaults(
+                            $class, $perl_to_java,
+                        );
+
+                        # warn Data::Dumper::Dumper $Java_class->{$class};
+                        # warn "'extends' not implemented";
+                    }
+                    else {
+                        die "missing 'import' argument to generate Java class";
+                    }
 
 
                     # throw away this block - generate no Perl code
@@ -977,7 +1080,7 @@ package Perlito5::AST::CompUnit;
 
         $str .= Perlito5::Java::emit_wrap_java(-1,
              "class Main {",
-               [ "public static void main(String[] args) throws Exception {",
+               [ "public static void main(String[] args) {",
                    [ "PlEnv.init(args);",
                      "int want = PlCx.VOID;",
                      "try {",
@@ -1000,6 +1103,42 @@ package Perlito5::AST::CompUnit;
                    ],
                  "}",
                ],
+               [ "public static void init() {",
+                 [
+                    "main(new String[]{});"
+                 ],
+                 "}",
+               ],
+               [ "public static PlObject[] apply(String functionName, String... args) {",
+                 [
+                     "PlArray list = new PlArray(args);",
+                     "PlObject result = PlV.get(functionName).apply(PlCx.LIST, list);",
+                     "PlArray res = result instanceof PlArray ? (PlArray) result : new PlArray(result);",
+                     "PlObject[] out = new PlObject[res.to_int()];",
+                     "int i = 0;",
+                     "for (PlObject s : res.a) {",
+                         [ "out[i++] = s;",
+                         ],
+                     "}",
+                     "return out;",
+                 ],
+                 "}",
+               ],
+               [ "public static PlObject[] apply(String functionName, PlObject... args) {",
+                 [
+                     "PlArray list = new PlArray(args);",
+                     "PlObject result = PlV.get(functionName).apply(PlCx.LIST, list);",
+                     "PlArray res = result instanceof PlArray ? (PlArray) result : new PlArray(result);",
+                     "PlObject[] out = new PlObject[res.to_int()];",
+                     "int i = 0;",
+                     "for (PlObject s : res.a) {",
+                         [ "out[i++] = s;",
+                         ],
+                     "}",
+                     "return out;",
+                 ],
+                 "}",
+               ],
              "}",
         ) . "\n";
 
@@ -1014,7 +1153,7 @@ package Perlito5::AST::Int;
     sub emit_java {
         my ($self, $level, $wantarray) = @_;
         my $v = $self->{int};
-        if ( $v > (2**31-1) ) {
+        if ( $v > (2**63-1) ) {
             return "new PlDouble(" . $v . ".0)";
         }
         if ( $v >= -2 && $v < 0) {
@@ -1023,7 +1162,7 @@ package Perlito5::AST::Int;
         if ( $v >= 0 && $v <= 2) {
             return "PlCx.INT" . abs($v);
         }
-        "new PlInt(" . $v . ")";
+        "new PlInt(" . $v . "L)";
     }
     sub emit_java_get_decl { () }
     sub emit_java_has_regex { () }
@@ -1461,9 +1600,9 @@ package Perlito5::AST::Var;
                 return $s . '.length_of_array()';
             }
             if ( $wantarray eq 'runtime' ) {
-                return '(p5want'
+                return '(want == PlCx.LIST'
                     . ' ? ' . $s
-                    . ' : ' . $s . '.to_int()'
+                    . ' : ' . $s . '.to_long()'
                     . ')';
             }
             return $s;
@@ -1477,7 +1616,7 @@ package Perlito5::AST::Var;
             return Perlito5::Java::escape_string( $namespace );
         }
 
-        my $index = Perlito5::Java::escape_string($namespace . '|' . $table->{$sigil} . $str_name);
+        my $index = Perlito5::Java::escape_string($namespace . '::' . $table->{$sigil} . $str_name);
         if ( $sigil eq '$' ) {
             return "PlV.get$local(" . $index . ')';
         }
@@ -1515,12 +1654,12 @@ package Perlito5::AST::Var;
                 return $s . '.set_end_of_array_index(' . Perlito5::Java::to_scalar([$arguments], $level+1) . ')';
             }
             if ( $wantarray eq 'scalar' ) {
-                return $s . '.to_int()';
+                return $s . '.to_long()';
             }
             if ( $wantarray eq 'runtime' ) {
-                return '(p5want'
+                return '(want'
                     . ' ? ' . $s
-                    . ' : ' . $s . '.to_int()'
+                    . ' : ' . $s . '.to_long()'
                     . ')';
             }
             return $s;
@@ -1534,7 +1673,7 @@ package Perlito5::AST::Var;
             return Perlito5::Java::escape_string( $namespace );
         }
 
-        my $index = Perlito5::Java::escape_string($namespace . '|' . $table->{$sigil} . $str_name);
+        my $index = Perlito5::Java::escape_string($namespace . '::' . $table->{$sigil} . $str_name);
         if ( $sigil eq '$' ) {
             return "PlV.set$local(" . $index . ', ' . Perlito5::Java::to_scalar([$arguments], $level+1) . ')';
         }
@@ -1576,7 +1715,7 @@ package Perlito5::AST::Var;
                 return $self->emit_java($level, 'list') . '.length_of_array()';
             }
             if ( $wantarray eq 'runtime' ) {
-                return '(p5want'
+                return '(want == PlCx.LIST'
                     . ' ? ' . $self->emit_java($level, 'list')
                     . ' : ' . $self->emit_java($level, 'list') . '.length_of_array()'
                     . ')';
@@ -1872,7 +2011,7 @@ package Perlito5::AST::Call;
         else {
             $meth = Perlito5::Java::escape_string($meth);
         }
-        return 'p5call(' . $invocant . ', ' 
+        return 'PerlOp.call(' . $invocant . ', ' 
                          . $meth . ', ' 
                          . Perlito5::Java::to_list($self->{arguments}) . ', '
                          . Perlito5::Java::to_context($wantarray)
@@ -2118,12 +2257,12 @@ package Perlito5::AST::Apply;
         'chr' => sub {
             my ($self, $level, $wantarray) = @_;
               'new PlString((char)'
-            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_int())'
+            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_long())'
         },
         'int' => sub {
             my ($self, $level, $wantarray) = @_;
               'new PlInt('
-            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_int())'
+            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_long())'
         },
         'rand' => sub {
             my ($self, $level, $wantarray) = @_;
@@ -2138,7 +2277,7 @@ package Perlito5::AST::Apply;
             my ($self, $level, $wantarray) = @_;
               'PerlOp.srand('
             . ( $self->{arguments}->[0]
-              ? $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_int()'
+              ? $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_long()'
               : ''
               )
             . ')'
@@ -2156,38 +2295,38 @@ package Perlito5::AST::Apply;
         'infix:<%>' => sub {
             my ($self, $level, $wantarray) = @_;
               'new PlInt('
-            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_int() % '
-            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_int())'
+            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_long() % '
+            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_long())'
         },
         'infix:<>>>' => sub {
             my ($self, $level, $wantarray) = @_;
               'new PlInt('
-            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_int() >>> '
-            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_int())'
+            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_long() >>> '
+            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_long())'
         },
         'infix:<<<>' => sub {
             my ($self, $level, $wantarray) = @_;
               'new PlInt('
-            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_int() << '
-            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_int())'
+            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_long() << '
+            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_long())'
         },
         'infix:<^>' => sub {
             my ($self, $level, $wantarray) = @_;
               'new PlInt('
-            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_int() ^ '
-            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_int())'
+            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_long() ^ '
+            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_long())'
         },
         'infix:<&>' => sub {
             my ($self, $level, $wantarray) = @_;
               'new PlInt('
-            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_int() & '
-            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_int())'
+            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_long() & '
+            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_long())'
         },
         'infix:<|>' => sub {
             my ($self, $level, $wantarray) = @_;
               'new PlInt('
-            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_int() | '
-            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_int())'
+            . $self->{arguments}->[0]->emit_java($level, 'scalar') . '.to_long() | '
+            . $self->{arguments}->[1]->emit_java($level, 'scalar') . '.to_long())'
         },
         'infix:<+>' => sub {
             my ($self, $level, $wantarray) = @_;
@@ -2381,7 +2520,7 @@ package Perlito5::AST::Apply;
         },
         'prefix:<~>' => sub {
             my $self = $_[0];
-            'new PlInt(~' . Perlito5::Java::to_num( $self->{arguments}->[0] ) . '.to_int())';
+            'new PlInt(~' . Perlito5::Java::to_num( $self->{arguments}->[0] ) . '.to_long())';
         },
         'prefix:<->' => sub {
             my ($self, $level, $wantarray) = @_;
@@ -2805,7 +2944,7 @@ package Perlito5::AST::Apply;
             Perlito5::Java::emit_wrap_java($level,
                 ( $context eq 'p5want'
                   ? ()
-                  : "var p5want = " . $context . ";",
+                  : "var want = " . $context . ";",
                 ),
                 "var r;",
                 'p5pkg["main"]["v_@"] = "";',
@@ -3149,7 +3288,7 @@ package Perlito5::AST::Apply;
         },
         'grep' => sub {
             my ($self, $level, $wantarray) = @_;
-            my @in  = @{$self->{arguments}};
+            my @in = @{$self->{arguments}};
 
             my $fun;
 
@@ -3174,6 +3313,15 @@ package Perlito5::AST::Apply;
             'PerlOp.grep(' . $sub->emit_java( $level + 1 ) . ', '
                 . $list . ', '
                 . Perlito5::Java::to_context($wantarray) . ')';
+        },
+        'bless' => sub {
+            my ($self, $level, $wantarray) = @_;
+            my @in  = @{$self->{arguments}};
+            my $ref = shift @in;
+            my $class = shift @in;
+
+            return $ref->emit_java( $level, "scalar" )
+                . '.bless(' . $class->emit_java( $level, "scalar" ) . ')';
         },
         'sort' => sub {
             my ($self, $level, $wantarray) = @_;
@@ -3338,10 +3486,10 @@ package Perlito5::AST::Apply;
                     die "Java::inline needs a string constant";
                 }
             }
-            $code = 'PlV.get(' . Perlito5::Java::escape_string($self->{namespace} . '|' . $code ) . ')'
+            $code = 'PlV.get(' . Perlito5::Java::escape_string($self->{namespace} . '::' . $code ) . ')'
         }
         else {
-            $code = 'PlV.get(' . Perlito5::Java::escape_string($Perlito5::PKG_NAME . '|' . $code ) . ')'
+            $code = 'PlV.get(' . Perlito5::Java::escape_string($Perlito5::PKG_NAME . '::' . $code ) . ')'
         }
 
         my $sig;
@@ -3441,7 +3589,7 @@ package Perlito5::AST::Apply;
                 $sig = substr($sig, 1);
             }
 
-            return $code . '('
+            return $code . '.apply('
                         . Perlito5::Java::to_context($wantarray)
                         . ', [' . join(', ', @out) . $close
                 . ')';
@@ -3452,7 +3600,7 @@ package Perlito5::AST::Apply;
 
         # TODO - autoload
         # if ( $may_need_autoload ) {
-        #     # p5call_sub(namespace, name, list, p5want)
+        #     # p5call_sub(namespace, name, list, want)
         #     my $name = $self->{code};
         #     my $namespace = $self->{namespace} || $Perlito5::PKG_NAME;
         #     return 'p5call_sub('
@@ -3822,7 +3970,8 @@ package Perlito5::AST::Sub;
         # warn Data::Dumper::Dumper(\@captured);
         # warn Data::Dumper::Dumper(\%dont_capture);
         # warn Data::Dumper::Dumper(\%capture);
-        my @captures_ast  = values %capture;
+        my @captures_ast  = map { $capture{$_} }
+                            sort keys %capture;
         my @captures_java = map { $_->emit_java( $level, 'list' ) } @captures_ast;
 
         # set the new variable names inside the closure
@@ -3865,7 +4014,7 @@ package Perlito5::AST::Sub;
         );
 
         if ( $self->{name} ) {
-            return 'PlV.set(' . Perlito5::Java::escape_string($self->{namespace} . '|' . $self->{name} ) . ", " . $s . ')'
+            return 'PlV.set(' . Perlito5::Java::escape_string($self->{namespace} . '::' . $self->{name} ) . ", " . $s . ')'
         }
         else {
             return $s;

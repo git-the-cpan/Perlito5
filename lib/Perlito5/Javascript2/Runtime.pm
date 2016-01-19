@@ -87,7 +87,7 @@ if (typeof p5pkg !== "object") {
         var o = List__[0];
         var s = List__[1];
         if ( s.indexOf("::") == -1 ) {
-            return p5method_lookup(s, o._class_._ref__, {})
+            return p5method_lookup(s, o._class_._ref_, {})
         }
         var c = s.split("::");
         s = c.pop(); 
@@ -421,7 +421,13 @@ p5pkg["Perlito5"].v_PKG_NAME = "main";
 p5make_package("main::STDIN").file_handle = { id : 0, readline_buffer : '' };
 p5make_package("main::STDOUT").file_handle = { id : 1 };
 p5make_package("main::STDERR").file_handle = { id : 2 };
+p5make_package("main::STDIN")['List_ISA'] = ['Perlito5::IO'];
+// p5make_package("main::STDOUT")['List_ISA'] = ['Perlito5::IO'];
+// p5make_package("main::STDERR")['List_ISA'] = ['Perlito5::IO'];
 p5make_package("ARGV").file_handle = { id : null };
+p5make_package("main")["STDOUT"] = p5pkg["main::STDOUT"];
+p5make_package("main")["STDERR"] = p5pkg["main::STDERR"];
+p5make_package("main")["STDIN"] = p5pkg["main::STDIN"];
 p5pkg["STDOUT"] = p5pkg["main::STDOUT"];
 p5pkg["STDERR"] = p5pkg["main::STDERR"];
 p5pkg["STDIN"] = p5pkg["main::STDIN"];

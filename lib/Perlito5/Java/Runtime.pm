@@ -2,6 +2,124 @@ use v5;
 
 package Perlito5::Java::Runtime;
 
+sub emit_java_extends {
+    my ($class, $java_classes) = @_;
+    # extends the imported Java classes
+    # that were declared with
+    #
+    #   package My::X { extends => "My::Object" }
+    #
+
+    # 'extends' => 'My::Object',
+    # 'extends_java_type' => 'Object',
+    # 'java_native_to_perl' => 'pMyX',
+    # 'java_type' => 'MyX',
+    # 'perl_package' => 'My::X',
+    # 'perl_to_java' => 'to_MyX',
+    # 'Java::inline' => " // ... Java code ... \n",
+    # 'methods' => [
+    #     instance_meth => {
+    #         decl => [ "public" ],
+    #         return => "Int",
+    #         args => [ "Int" ],     # this/$self is added to the Perl method arguments
+    #         code => "MyClass::instance_meth",
+    #     },
+    #     class_meth => {
+    #         decl => [ "public", "static" ],
+    #         return => "Int",
+    #         args => [ "Int" ],     # class name is added to the Perl method arguments
+    #         code => "MyClass::class_meth",
+    #     },
+    #
+    # TODO: constructors, variables
+    #
+    #     MyX => {
+    #         decl => [ "public" ],
+    #         return => undef,       # a constructor doesn't return anything
+    #         args => [],
+    #         Java::inline => '{ super(123) }',
+    #     },
+    # ],
+    # 'variables' => [
+    #     myName => {
+    #         decl => [ "public" ],
+    #         type => "String",
+    #     },
+    # ],
+
+    my @out;
+    push @out, "class $class->{java_type} extends $class->{extends_java_type} {";
+    push @out, $class->{'Java::inline'} if $class->{'Java::inline'};
+    while ( @{ $class->{variables} } ) {
+        my $method = shift @{ $class->{variables} };
+        my $data   = shift @{ $class->{variables} };
+        # TODO
+        #
+    }
+    while ( @{ $class->{methods} } ) {
+        my $method = shift @{ $class->{methods} };
+        my $data   = shift @{ $class->{methods} };
+        my $decl   = $data->{decl};
+        my $code   = $data->{code}   or die "Java extends: missing 'code' argument in method '$method'";
+        my $return = $data->{return} or die "Java extends: missing 'return' argument in method '$method'";
+        my @args;
+        my $var = 0;
+        for my $arg ( @{ $data->{args} } ) {
+            my $type = $java_classes->{$arg};
+            push @args, "$type->{java_type} param$var";
+            $var++;
+        }
+        my @java_decl = @$decl;
+        my $return_type = $return;
+        if ( $return ne "void" ) {
+            my $type = $java_classes->{$return};
+            $return_type = $type->{java_type};
+        }
+        push @out, "    @java_decl $return_type $method(" . join(", ", @args) . ") {";
+
+        @args = ();
+        if ( grep { $_ eq "static" } @$decl ) {
+            # class method
+            push @args, "new PlString(\"$class->{perl_package}\")";
+        }
+        else {
+            # instance method
+            push @args, "new $class->{java_native_to_perl}(this)";
+        }
+        $var = 0;
+        for my $arg ( @{ $data->{args} } ) {
+            my $type = $java_classes->{$arg};
+            push @args, "new $type->{java_native_to_perl}(param$var)";
+            $var++;
+        }
+        push @out, "        PlObject[] res = Main.apply(\"$code\", " . join(", ", @args) . ");";
+
+        if ( $return eq "void" ) {
+            # void method
+            push @out, "        return;";
+        }
+        else {
+            my $type = $java_classes->{$return}
+              or die "Java class '$return' is not imported";
+            push @out, "        return res[0].$type->{perl_to_java}();";
+        }
+
+        # public Int instance_meth(Int param1) {
+        #     PlInt p1 = new PlInt(param1);
+        #     PlObject[] res = Main.apply("MyClass::instance_meth", this, p1);
+        #     return res[0].to_Int();
+        # }
+        # public Int class_meth(Int param1) {
+        #     PlObject[] res = Main.apply("MyClass::class_meth", param1);
+        #     return res[0].to_Int();
+        # }
+
+        push @out, "    }";
+    }
+    push @out, "}\n";
+    return join("\n", @out);
+}
+
 sub emit_java {
     my ($self, %args) = @_;
     my %java_classes = %{ $args{java_classes} // {} };
@@ -52,14 +170,26 @@ EOT
         # import the Java classes
         # that were declared with
         #
-        #   package MyJavaClass { Java }
+        #   package My::Java { import => "org.My.Java", ... }
         #
     . join('', ( map {
-                    my $class = $_;
+                    my $class = $java_classes{$_};
                     $class->{import} ? "import $class->{import};\n" : ()
             }
-            values %java_classes
+            sort keys %java_classes
       ))
+        # extends the imported Java classes
+        # that were declared with
+        #
+        #   package My::Java { extends => "My::Java", ... }
+        #
+    . join('', ( map {
+                    my $class = $java_classes{$_};
+                    $class->{extends} ? emit_java_extends($class, \%java_classes) : ()
+            }
+            sort keys %java_classes
+      ))
+        # Perl-Java exceptions
     . <<'EOT'
 class PlControlException extends RuntimeException {
 }
@@ -113,8 +243,8 @@ class PlCx {
     public static final PlString STDIN  = new PlString("STDIN");
     public static final PlString DIED   = new PlString("Died");
     public static final PlString EMPTY  = new PlString("");
-    public static final String  ARGV   = "main|List_ARGV";
-    public static final String  ENV    = "main|Hash_ENV";
+    public static final String  ARGV   = "main::List_ARGV";
+    public static final String  ENV    = "main::Hash_ENV";
     public static final PlNextException NEXT = new PlNextException(0);
     public static final PlLastException LAST = new PlLastException(0);
 
@@ -176,7 +306,7 @@ class PlCORE {
         // die() shortcut
         return PlCORE.die(PlCx.VOID, new PlArray(new PlString(s)));
     }
-    public static final PlObject ref(int want, PlArray List__) {
+    public static final PlString ref(int want, PlArray List__) {
         return List__.aget(0).ref();
     }
     public static final PlObject values(int want, PlObject List__) {
@@ -323,6 +453,77 @@ class PerlOp {
     private static PlArray local_stack = new PlArray();
     private static Random random = new Random();
 
+    // objects
+    // coderef methods can be called on ANY invocant
+    //  $m = sub {...};
+    //  $a->$m
+    public static final PlObject call( PlObject invocant, PlObject method, PlArray args, int context ) {
+        if ( method.is_coderef() ) {
+            args.unshift(invocant);
+            return method.apply(context, args);
+        }
+        else if ( method.is_lvalue() ) {
+            return call( invocant, method.get(), args, context );
+        }
+        else {
+            return call( invocant, method.toString(), args, context );
+        }
+    }
+    public static final PlObject call( String invocant, PlObject method, PlArray args, int context ) {
+        if ( method.is_coderef() ) {
+            args.unshift( new PlString(invocant) );
+            return method.apply(context, args);
+        }
+        else if ( method.is_lvalue() ) {
+            return call( invocant, method.get(), args, context );
+        }
+        else {
+            return call( invocant, method.toString(), args, context );
+        }
+    }
+    // Intermediate calls, which have to be dispatched properly
+    public static final PlObject call( PlObject invocant, String method, PlArray args, int context ) {
+        if ( invocant.is_undef() ) {
+            PlCORE.die( "Can't call method \"" + method
+                + "\" on an undefined value" );
+            return PlCx.UNDEF;
+        }
+
+        if ( invocant.is_lvalue() ) {
+            invocant = invocant.get();
+        }
+
+        PlClass pClass = invocant.blessed();
+
+        if ( pClass == null ) {
+            PlCORE.die( "Can't call method \"" + method
+                + "\" on unblessed reference" );
+            return PlCx.UNDEF;
+        }
+        else {
+            return call( pClass.className().toString(), method, args, context );
+        }
+    }
+    public static final PlObject call( String invocant, String method, PlArray args, int context ) {
+        if ( invocant.equals("") ) {
+            PlCORE.die( "Can't call method \"" + method
+                + "\" on an undefined value" );
+            return PlCx.UNDEF;
+        }
+
+        PlObject methodCode = PlV.get(invocant + "::" + method);
+
+        if (methodCode.is_undef()) {
+            PlCORE.die( "Can't locate object method \"" + method
+                + "\" via package \"" + invocant
+                + "\" (perhaps you forgot to load \"" + invocant + "\"?" );
+            return PlCx.UNDEF;
+        }
+
+        args.unshift( new PlString(invocant) );
+        return methodCode.apply(context, args);
+    }
+
     // local()
     public static final PlObject push_local(PlHash container, String index) {
         local_stack.a.add(container);
@@ -371,6 +572,12 @@ class PerlOp {
             return new PlArray();
         }
         return PlCx.UNDEF;
+    }
+    public static final PlObject context(int want, PlObject... args) {
+        if (want == PlCx.LIST) {
+            return new PlArray(args);
+        }
+        return args[args.length-1].scalar();
     }
 
     // statement()
@@ -421,12 +628,12 @@ class PerlOp {
         return new PlDouble(s * random.nextDouble());
     }
 
-    public static final int[] range(PlObject _start, PlObject _end, int ctx, String var, int ignore) {
+    public static final long[] range(PlObject _start, PlObject _end, int ctx, String var, int ignore) {
         if (ctx == PlCx.LIST) {
-            int start = _start.to_int(),
-                end   = _end.to_int();
-            int size = Math.max(0, end - start + 1);
-            int[] ret = new int[size];
+            long start = _start.to_long(),
+                 end   = _end.to_long();
+            int size = Math.max(0, (int)(end - start + 1));
+            long[] ret = new long[size];
             for (int i = 0; i < size; ++i) {
                 ret[i] = start + i;
             }
@@ -523,7 +730,7 @@ class PerlOp {
     public static final PlObject grep(PlClosure c, PlArray a, int wantarray) {
         PlArray ret = new PlArray();
         int size = a.to_int();
-        PlLvalue v__ref = (PlLvalue)PlV.get("main|v__");
+        PlLvalue v__ref = (PlLvalue)PlV.get("main::v__");
         PlObject v__val = v__ref.get();
         for (int i = 0; i < size; i++) {
             boolean result;
@@ -540,7 +747,7 @@ class PerlOp {
     public static final PlObject map(PlClosure c, PlArray a, int wantarray) {
         PlArray ret = new PlArray();
         int size = a.to_int();
-        PlLvalue v__ref = (PlLvalue)PlV.get("main|v__");
+        PlLvalue v__ref = (PlLvalue)PlV.get("main::v__");
         PlObject v__val = v__ref.get();
         for (int i = 0; i < size; i++) {
             v__ref.set(a.aget(i));
@@ -552,8 +759,8 @@ class PerlOp {
     public static final PlObject sort(PlClosure c, PlArray a, int wantarray, String pckg) {
         PlArray ret = new PlArray(a);
         int size = a.to_int();
-        PlLvalue v_a_ref = (PlLvalue)PlV.get(pckg + "|v_a");
-        PlLvalue v_b_ref = (PlLvalue)PlV.get(pckg + "|v_b");
+        PlLvalue v_a_ref = (PlLvalue)PlV.get(pckg + "::v_a");
+        PlLvalue v_b_ref = (PlLvalue)PlV.get(pckg + "::v_b");
         PerlCompare comp = new PerlCompare(c, v_a_ref, v_b_ref);
         PlObject v_a_val = v_a_ref.get();
         PlObject v_b_val = v_b_ref.get();
@@ -562,12 +769,74 @@ class PerlOp {
         v_b_ref.set(v_b_val);
         return (wantarray == PlCx.LIST ) ? ret : ret.length_of_array();
     }
+
+    private static String double_escape(String s) {
+        // add double escapes: \\w instead of \w
+        return s.replace("\\", "\\\\");
+    }
+
+    private static int _character_class_escape(int offset, String s, StringBuilder sb, int length) {
+        // [ ... ]
+        int offset3 = offset;
+        for ( ; offset3 < length; ) {
+            final int c3 = s.codePointAt(offset3);
+            switch (c3) {        
+                case ']':
+                    sb.append(Character.toChars(c3));
+                    return offset3;
+                case ' ':
+                    sb.append("\\ ");   // make this space a "token", even inside /x
+                    break;
+                default:
+                    sb.append(Character.toChars(c3));
+                    break;
+            }
+            offset3++;
+        }
+        return offset3;
+    }
+
+    public static String character_class_escape(String s) {
+        // escape spaces in character classes
+        final int length = s.length();
+        StringBuilder sb = new StringBuilder();
+        for (int offset = 0; offset < length; ) {
+            final int c = s.codePointAt(offset);
+            switch (c) {        
+                case '\\':  // escape - \[
+                            sb.append(Character.toChars(c));
+                            if (offset < length) {
+                                offset++;
+                                int c2 = s.codePointAt(offset);
+                                sb.append(Character.toChars(c2));
+                            }
+                            break;
+                case '[':   // character class
+                            sb.append(Character.toChars(c));
+                            offset++;
+                            offset = _character_class_escape(offset, s, sb, length);
+                            break;
+                default:    // normal char
+                            sb.append(Character.toChars(c));
+                            break;
+            }
+            offset++;
+        }
+        return sb.toString();
+    }
+
     public static final PlObject match(PlObject s, PlRegex pat, int want) {
         if (want != PlCx.LIST) {
             return pat.p.matcher(s.toString()).find() ? PlCx.TRUE : PlCx.FALSE;
         }
-        PlCORE.die("not implemented string match in list context");
-        return s;
+        PlArray ret = new PlArray();
+        Matcher matcher = pat.p.matcher(s.toString());
+        while (matcher.find()) {
+            for (int i = 1; i <= matcher.groupCount(); i++) {
+                ret.push(matcher.group(i));
+            }
+        }
+        return ret;
     }
     public static final PlObject match(PlObject s, PlLvalue pat, int want) {
         return match(s, pat.get(), want);
@@ -579,7 +848,7 @@ class PerlOp {
 
     public static final PlObject replace(PlLvalue s, PlRegex pat, PlObject rep, int want) {
         if (want != PlCx.LIST) {
-            return s.set(new PlString(pat.p.matcher(s.toString()).replaceAll(rep.toString())));
+            return s.set(new PlString(pat.p.matcher(s.toString()).replaceAll(double_escape(rep.toString()))));
         }
         PlCORE.die("not implemented string replace in list context");
         return s;
@@ -641,11 +910,10 @@ class PlEnv {
     public static final void init(String[] args) {
         PlV.array_set(PlCx.ARGV, new PlArray(args));               // args is String[]
         PlV.hash_set(PlCx.ENV,   new PlArray(System.getenv()));    // env  is Map<String, String>
-        PlV.set("main|v_" + (char)34, new PlString(" "));         // $" = " "
+        PlV.set("main::v_" + (char)34, new PlString(" "));         // $" = " "
     }
 }
 class PlObject {
-    // extends java object ???
     public static final PlString REF = new PlString("");
 
     public PlObject() {
@@ -657,23 +925,48 @@ EOT
         #   package MyJavaClass { Java }
         #
     . join('', ( map {
-                    my $class = $_;
+                    my $class = $java_classes{$_};
                     my $java_class_name = $class->{java_type};
                     my $perl_to_java = $class->{perl_to_java};
-                    $class->{import} ? 
+                    $class->{import} || $class->{extends} ? 
                     "    public ${java_class_name} ${perl_to_java}() {\n"
                   . "        PlCORE.die(\"error .${perl_to_java}!\");\n"
                   . "        return null;\n"
                   . "    }\n" : ()
             }
-            values %java_classes
+            sort keys %java_classes
       ))
     . <<'EOT'
     // public String toString() {
     //     return this.toString();
     // }
     public int to_int() {
-        PlCORE.die("error .to_int!");
+        long v = this.to_long();
+        if (v > Integer.MAX_VALUE || v < Integer.MIN_VALUE) {
+            PlCORE.die("numeric overflow converting to int");
+        }
+        return (int)v;
+    }
+    public byte to_byte() {
+        long v = this.to_long();
+        if (v > Byte.MAX_VALUE || v < Byte.MIN_VALUE) {
+            PlCORE.die("numeric overflow converting to byte");
+        }
+        return (byte)v;
+    }
+    public short to_short() {
+        long v = this.to_long();
+        if (v > Short.MAX_VALUE || v < Short.MIN_VALUE) {
+            PlCORE.die("numeric overflow converting to short");
+        }
+        return (short)v;
+    }
+    public float to_float() {
+        double v = this.to_double();
+        return (float)v;
+    }
+    public long to_long() {
+        PlCORE.die("error .to_long!");
         return 0;
     }
     public PlObject end_of_array_index() {
@@ -892,6 +1185,9 @@ EOT
     public boolean is_lvalue() {
         return false;
     }
+    public boolean is_ref() {
+        return false;
+    }
     public boolean is_scalarref() {
         return false;
     }
@@ -901,7 +1197,12 @@ EOT
     public boolean is_hashref() {
         return false;
     }
-
+    public boolean is_coderef() {
+        return false;
+    }
+    public PlString ref() {
+		return REF;
+    }
     public PlObject _decr() {
         // --$x
         return PlCx.MIN1;
@@ -911,10 +1212,10 @@ EOT
         return PlCx.INT1;
     }
     public PlObject neg() {
-        return new PlInt(-this.to_int());
+        return new PlInt(-this.to_long());
     }
     public PlObject abs() {
-        int c = this.to_int();
+        long c = this.to_long();
         return new PlInt(c < 0 ? -c : c);
     }
 
@@ -1024,9 +1325,12 @@ EOT
         PlCORE.die("TODO substr EXPR,OFFSET,LENGTH,REPLACEMENT");
         return this;
     }
-
-    public PlObject ref() {
-        return REF;
+    public PlObject bless(PlString className) {
+		PlCORE.die("Can't bless non-reference value");
+		return this;
+    }
+    public PlClass blessed() {
+		return null;
     }
     public PlObject scalar() {
         return this;
@@ -1039,7 +1343,8 @@ EOT
         return b.num_cmp2(this);
     }
     public PlObject num_cmp2(PlObject b) {
-        int c = new Integer(b.to_int()).compareTo(this.to_int());
+        Long blong = new Long(b.to_long());
+        int c = blong.compareTo(this.to_long());
         return new PlInt(c == 0 ? c : c < 0 ? -1 : 1);
     }
 EOT
@@ -1058,11 +1363,11 @@ EOT
 "
         :
 "    public PlObject ${perl}2(PlObject s) {
-        return new ${returns}( s.to_int() ${native} this.to_int() );
+        return new ${returns}( s.to_long() ${native} this.to_long() );
     }
 "       )
             }
-            keys %number_binop ))
+            sort keys %number_binop ))
 
     . ( join('', map {
             my $perl = $_;
@@ -1073,18 +1378,36 @@ EOT
     }
 "
             }
-            keys %string_binop ))
+            sort keys %string_binop ))
 
     . <<'EOT'
 }
 class PlReference extends PlObject {
     public static final PlString REF = new PlString("REF");
+	public PlClass bless;
+
+    public boolean is_ref() {
+        return true;
+    }
+    public PlReference bless(PlString className) {
+        this.bless = new PlClass(className);
+        return this;
+    }
+    public PlClass blessed() {
+		return this.bless;
+    }
+
+	public PlString ref() {
+		if ( this.bless == null ) {
+			return REF;
+		}
+		else {
+			return this.bless.className();
+		}
+	}
 
     public String toString() {
         return this.ref().toString() + "(0x" + Integer.toHexString(this.hashCode()) + ")";
-    }
-    public PlObject ref() {
-        return REF;
     }
 }
 class PlRegex extends PlReference {
@@ -1093,17 +1416,14 @@ class PlRegex extends PlReference {
     public static final PlString REF = new PlString("Regexp");
 
     public PlRegex(String p, int flags) {
-        this.p = Pattern.compile(p, flags);
+        this.p = Pattern.compile(PerlOp.character_class_escape(p), flags);
     }
     public PlRegex(PlObject p, int flags) {
-        this.p = Pattern.compile(p.toString(), flags);
+        this.p = Pattern.compile(PerlOp.character_class_escape(p.toString()), flags);
     }
     public String toString() {
         // TODO - show flags
         return this.p.toString();
-    }
-    public PlObject ref() {
-        return REF;
     }
 }
 class PlClosure extends PlReference implements Runnable {
@@ -1124,14 +1444,30 @@ class PlClosure extends PlReference implements Runnable {
         // run as a thread
         this.apply(PlCx.VOID, new PlArray());
     }
-    public PlObject ref() {
-        return REF;
+	public PlString ref() {
+		if ( this.bless == null ) {
+			return REF;
+		}
+		else {
+			return this.bless.className();
+		}
+	}
+    public boolean is_coderef() {
+        return true;
     }
 }
 class PlLvalueRef extends PlReference {
     private PlObject o;
     public static final PlString REF = new PlString("SCALAR");
 
+	public PlString ref() {
+		if ( this.bless == null ) {
+			return REF;
+		}
+		else {
+			return this.bless.className();
+		}
+	}
     public String toString() {
         int id = System.identityHashCode(this.o);
         return this.ref().toString() + "(0x" + Integer.toHexString(id) + ")";
@@ -1151,12 +1487,10 @@ class PlLvalueRef extends PlReference {
     public PlObject get() {
         return this.o;
     }
-    public PlObject ref() {
-        return REF;
-    }
 }
 class PlArrayRef extends PlArray {
     public static final PlString REF = new PlString("ARRAY");
+	public PlClass bless;
 
     public String toString() {
         int id = System.identityHashCode(this.a);
@@ -1192,18 +1526,34 @@ class PlArrayRef extends PlArray {
     public boolean is_array() {
         return false;
     }
+    public boolean is_ref() {
+        return true;
+    }
     public boolean is_arrayref() {
         return true;
     }
     public PlObject scalar() {
         return this;
     }
-    public PlObject ref() {
-        return REF;
+    public PlArrayRef bless(PlString className) {
+        this.bless = new PlClass(className);
+        return this;
     }
+    public PlClass blessed() {
+		return this.bless;
+    }
+	public PlString ref() {
+		if ( this.bless == null ) {
+			return REF;
+		}
+		else {
+			return this.bless.className();
+		}
+	}
 }
 class PlHashRef extends PlHash {
     public static final PlString REF = new PlString("HASH");
+	public PlClass bless;
 
     public String toString() {
         int id = System.identityHashCode(this.h);
@@ -1239,14 +1589,46 @@ class PlHashRef extends PlHash {
     public boolean is_hash() {
         return false;
     }
+    public boolean is_ref() {
+        return true;
+    }
     public boolean is_hashref() {
         return true;
     }
     public PlObject scalar() {
         return this;
     }
-    public PlObject ref() {
-        return REF;
+    public PlHashRef bless(PlString className) {
+        this.bless = new PlClass(className);
+        return this;
+    }
+    public PlClass blessed() {
+		return this.bless;
+    }
+    public PlString ref() {
+		if ( this.bless == null ) {
+			return REF;
+		}
+		else {
+			return this.bless.className();
+		}
+	}
+}
+class PlClass {
+	public static PlHash classes = new PlHash();
+	public PlString className;
+
+	public PlClass (PlString blessing) {
+		this.className = blessing;
+		if (classes.exists(className) == null) {
+			classes.hset(className, className);
+		}
+	}
+	public PlString className() {
+		return this.className;
+	}
+    public boolean is_undef() {
+        return this.className == null;
     }
 }
 class PlLvalue extends PlObject {
@@ -1270,7 +1652,6 @@ class PlLvalue extends PlObject {
         // $a = %x
         this.o = o.scalar();
     }
-
     public PlObject get() {
         return this.o;
     }
@@ -1460,14 +1841,14 @@ EOT
     }
 " : ()
             }
-            keys %native_to_perl ))
+            sort keys %native_to_perl ))
 
     . <<'EOT'
     public String toString() {
         return this.o.toString();
     }
-    public int to_int() {
-        return this.o.to_int();
+    public long to_long() {
+        return this.o.to_long();
     }
     public double to_double() {
         return this.o.to_double();
@@ -1493,7 +1874,7 @@ EOT
     }
 "
             }
-            keys %number_binop ))
+            sort keys %number_binop ))
 
     . <<'EOT'
     public boolean is_int() {
@@ -1513,6 +1894,9 @@ EOT
     }
     public boolean is_lvalue() {
         return true;
+    }
+    public boolean is_coderef() {
+        return this.o.is_coderef();
     }
 
     public PlObject pre_decr() {
@@ -1543,11 +1927,16 @@ EOT
     public PlObject abs() {
         return this.o.abs();
     }
-
     public PlObject scalar() {
         return this.o;
     }
-    public PlObject ref() {
+    public PlObject bless(PlString className) {
+        return this.o.bless(className);
+    }
+    public PlClass blessed() {
+		return this.o.blessed();
+    }
+    public PlString ref() {
         return this.o.ref();
     }
 EOT
@@ -1557,16 +1946,16 @@ EOT
         #   package MyJavaClass { Java }
         #
     . join('', ( map {
-                    my $class = $_;
+                    my $class = $java_classes{$_};
                     my $java_class_name = $class->{java_type};
                     my $perl_to_java = $class->{perl_to_java};
-                    $class->{import} ? 
+                    $class->{import} || $class->{extends} ? 
 "    public ${java_class_name} ${perl_to_java}() {
         return this.o.${perl_to_java}();
     }
 " : ()
             }
-            values %java_classes
+            sort keys %java_classes
       ))
 
     . <<'EOT'
@@ -1591,7 +1980,7 @@ class PlArray extends PlObject {
             }
             if (s.is_array()) {
                 // @x = ( @x, @y );
-                for (int i = 0; i < s.to_int(); i++) {
+                for (int i = 0; i < s.to_long(); i++) {
                     aa.add(s.aget(i));
                 }
             }
@@ -1610,7 +1999,7 @@ class PlArray extends PlObject {
         }
         if (s.is_array()) {
             // @x = ( @x, @y );
-            for (int i = 0; i < s.to_int(); i++) {
+            for (int i = 0; i < s.to_long(); i++) {
                 this.a.add(s.aget(i));
             }
         }
@@ -1636,6 +2025,23 @@ class PlArray extends PlObject {
         this.each_iterator = aa.each_iterator;
         this.a = aa.a;
     }
+
+    public PlObject set(long[] longs) {
+        this.a.clear();
+        // @x = long[] native;
+        for(long i : longs){
+            this.a.add(new PlInt(i));
+        }
+        this.each_iterator = 0;
+        return this;
+    }
+    public PlArray(long[] longs) {
+        PlArray aa = new PlArray();
+        aa.set(longs);
+        this.each_iterator = aa.each_iterator;
+        this.a = aa.a;
+    }
+
     public PlObject set(int[] ints) {
         this.a.clear();
         // @x = int[] native;
@@ -1690,12 +2096,12 @@ EOT
         #   package MyJavaClass { Java }
         #
     . join('', ( map {
-                    my $class = $_;
+                    my $class = $java_classes{$_};
                     my $java_class_name = $class->{java_type};
                     my $perl_to_java    = $class->{perl_to_java};
                     my $perl_package    = $class->{perl_package};
                     my $java_native_to_perl = $class->{java_native_to_perl};
-                    $class->{import} ? 
+                    $class->{import} || $class->{extends} ? 
 "    public PlObject set(${java_class_name}[] stuffs) {
         this.a.clear();
         // \@x = ${java_class_name}[] native;
@@ -1713,7 +2119,7 @@ EOT
     }
 " : ()
             }
-            values %java_classes
+            sort keys %java_classes
       ))
 
     . <<'EOT'
@@ -1963,7 +2369,7 @@ EOT
     }
 " : ()
             }
-            keys %native_to_perl ))
+            sort keys %native_to_perl ))
 
     . <<'EOT'
 
@@ -2086,6 +2492,9 @@ EOT
         }
         return sb.toString();
     }
+    public long to_long() {
+        return this.a.size();
+    }
     public int to_int() {
         return this.a.size();
     }
@@ -2096,7 +2505,7 @@ EOT
         return new PlInt(this.a.size() - 1);
     }
     public double to_double() {
-        return 0.0 + this.to_int();
+        return 0.0 + this.to_long();
     }
     public boolean to_bool() {
         return (this.a.size() > 0);
@@ -2481,7 +2890,7 @@ EOT
     }
 " : ()
             }
-            keys %native_to_perl ))
+            sort keys %native_to_perl ))
 
     . <<'EOT'
 
@@ -2489,12 +2898,12 @@ EOT
         // TODO
         return "" + this.hashCode();
     }
-    public int to_int() {
+    public long to_long() {
         // TODO
         return this.hashCode();
     }
     public double to_double() {
-        return 0.0 + this.to_int();
+        return 0.0 + this.to_long();
     }
     public boolean to_bool() {
         return true;
@@ -2529,7 +2938,7 @@ class PlUndef extends PlObject {
     public PlObject length() {
         return PlCx.UNDEF;
     }
-    public int to_int() {
+    public long to_long() {
         return 0;
     }
     public double to_double() {
@@ -2553,7 +2962,7 @@ class PlBool extends PlObject {
     public PlBool(boolean i) {
         this.i = i;
     }
-    public int to_int() {
+    public long to_long() {
         if (this.i) {
             return 1;
         }
@@ -2611,11 +3020,14 @@ class PlBool extends PlObject {
     }
 }
 class PlInt extends PlObject {
-    private int i;
-    public PlInt(int i) {
+    private long i;
+    public PlInt(long i) {
         this.i = i;
     }
-    public int to_int() {
+    public PlInt(int i) {
+        this.i = (long)i;
+    }
+    public long to_long() {
         return this.i;
     }
     public double to_double() {
@@ -2647,8 +3059,8 @@ class PlDouble extends PlObject {
     public PlDouble(double i) {
         this.i = i;
     }
-    public int to_int() {
-        return (int)(this.i);
+    public long to_long() {
+        return (long)(this.i);
     }
     public double to_double() {
         return this.i;
@@ -2707,7 +3119,7 @@ EOT
     }
 "
             }
-            keys %number_binop ))
+            sort keys %number_binop ))
 
     . <<'EOT'
     public boolean is_num() {
@@ -2862,8 +3274,8 @@ class PlString extends PlObject {
         }
         return PlCx.INT0;
     }
-    public int to_int() {
-        return this.parse().to_int();
+    public long to_long() {
+        return this.parse().to_long();
     }
     public double to_double() {
         return this.parse().to_double();
@@ -2990,7 +3402,7 @@ EOT
 "
             }
             }
-            keys %number_binop ))
+            sort keys %number_binop ))
 
     . <<'EOT'
 }
@@ -3001,12 +3413,12 @@ EOT
         #   package MyJavaClass { Java }
         #
     . join('', ( map {
-                    my $class = $_;
+                    my $class = $java_classes{$_};
                     my $java_class_name = $class->{java_type};
                     my $perl_to_java    = $class->{perl_to_java};
                     my $perl_package    = $class->{perl_package};
                     my $java_native_to_perl = $class->{java_native_to_perl};
-                    $class->{import} ? 
+                    $class->{import} || $class->{extends} ? 
 "class ${java_native_to_perl} extends PlReference {
     public static final PlString REF = new PlString(\"${perl_package}\");
     private ${java_class_name} stuff;
@@ -3017,23 +3429,23 @@ EOT
     public ${java_class_name} ${perl_to_java}() {
         return this.stuff;
     }
+    public PlString ref() {
+		return REF;
+    }
     public boolean is_undef() {
         return stuff == null;
-    }
-    public PlObject ref() {
-        return REF;
     }
 }
 " : ()
             }
-            values %java_classes
+            sort keys %java_classes
       ))
 
     . <<'EOT'
 // end Perl-Java runtime
 EOT
 
-} # end of emit_javascript2()
+} # end of emit_java()
 
 1;
 

@@ -138,6 +138,7 @@ t/550-flip-flop.t
 t/560-syntax-deref.t
 t/570-syntax-deref-string.t
 t/580-reverse.t
+t/590-glob-fh.t
 t/arith.t
 t/assign_scalar.t
 t/block.t
